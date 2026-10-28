@@ -19,6 +19,7 @@ from livekit.plugins import deepgram, elevenlabs, openai
 from livekit.plugins.elevenlabs import VoiceSettings
 from livekit.plugins.turn_detector.english import EnglishModel
 import requests
+from voice_agent import openrouter_tts
 from voice_agent.persona_config import (
     VOICE_SPEED,
     VOICE_STABILITY,
@@ -204,14 +205,10 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     if deepgram_language.startswith("en"):
         stt_kwargs["keyterms"] = stt_words
 
-    session = AgentSession(
-        stt=deepgram.STT(**stt_kwargs),
-        llm=openai.LLM(
-            model=os.environ.get("LLM_MODEL", "openai/gpt-5.4-mini"),
-            base_url=os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
-            api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
-        ),
-        tts=elevenlabs.TTS(
+    # ElevenLabs carries the cloned Solène voices. Without an ElevenLabs key,
+    # fall back to OpenRouter TTS (stock voice) on the same key as the LLM.
+    if os.environ.get("ELEVEN_API_KEY"):
+        session_tts = elevenlabs.TTS(
             model="eleven_flash_v2_5",
             voice_id=voice_id,
             voice_settings=VoiceSettings(
@@ -221,7 +218,23 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
                 style=VOICE_STYLE,
                 use_speaker_boost=VOICE_USE_SPEAKER_BOOST,
             ),
+        )
+    else:
+        logger.warning("ELEVEN_API_KEY not set — falling back to OpenRouter TTS")
+        session_tts = openrouter_tts.TTS(
+            api_key=os.environ["OPENROUTER_API_KEY"],
+            model=os.environ.get("OPENROUTER_TTS_MODEL", openrouter_tts.DEFAULT_MODEL),
+            voice=os.environ.get("OPENROUTER_TTS_VOICE", openrouter_tts.DEFAULT_VOICE),
+        )
+
+    session = AgentSession(
+        stt=deepgram.STT(**stt_kwargs),
+        llm=openai.LLM(
+            model=os.environ.get("LLM_MODEL", "openai/gpt-5.4-mini"),
+            base_url=os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
+            api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
         ),
+        tts=session_tts,
         vad=ctx.proc.userdata["vad"],
         turn_detection=EnglishModel(),
         userdata=SessionInfo(),
