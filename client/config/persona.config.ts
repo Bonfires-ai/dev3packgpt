@@ -1,8 +1,8 @@
 export const personaConfig = {
   // App identity
   appName: 'Solène',
-  tagline: 'Dev3pack Mentor',
-  description: 'Talk to Solène Daviaud, founder of Dev3pack, about your Web3 + AI project.',
+  tagline: 'Dev3pack Instructor',
+  description: 'Ask Solène Daviaud, founder of Dev3pack, your questions about Web3 and AI.',
   siteUrl: 'https://dev3pack.xyz',
   blogUrl: 'https://dev3pack.xyz',
 
@@ -16,8 +16,8 @@ export const personaConfig = {
 
   // Landing page
   heroTitle: 'Solène',
-  heroSubtitle: 'Dev3pack Mentor',
-  heroDescription: 'Talk to Solène about your project. Pick English or Français and go.',
+  heroSubtitle: 'Dev3pack Instructor',
+  heroDescription: 'Ask Solène your questions about Web3, AI and Dev3pack, by voice or text. Pick English or Français and go.',
   heroAvatarImage: '/avatars/solene-en.gif',
   heroAvatarAlt: 'Solène Avatar',
   startChatButtonLabel: 'TALK WITH SOLÈNE',
@@ -38,39 +38,48 @@ export const personaConfig = {
     english: {
       label: 'English',
       subtitle: 'Chat with Solène in English.',
-      description: 'Solène, founder of Dev3pack, ready to talk through your project — in English.',
+      description: 'Solène, founder of Dev3pack, ready to answer your questions — in English.',
       avatarImage: '/avatars/solene-en.gif',
       accentClass: 'bg-synthesis text-white',
       visualizerVariant: 'synthesis' as const,
       visualizerBgColor: '#A15EED',
       connectingLabel: 'Solène (English)',
+      endCard: {
+        title: 'Session complete',
+        body: 'Thanks for learning with me today. Keep the momentum going: try one thing we talked about, and join a Dev3pack bootcamp or hackathon hub to keep learning with the community.',
+        linkLabel: 'Explore Dev3pack',
+        saveLabel: 'Save session',
+        againLabel: 'Ask more questions',
+      },
+      inputPlaceholder: 'Type a question…',
+      sendLabel: 'Send',
+      muteLabel: 'Mute Solène',
+      unmuteLabel: 'Unmute Solène',
+      endHint: "Say 'Bye' or press 'End' to finish this session",
     },
     french: {
       label: 'Français',
       subtitle: 'Discutez avec Solène en français.',
-      description: 'Solène, fondatrice de Dev3pack, prête à parler de ton projet — en français.',
+      description: 'Solène, fondatrice de Dev3pack, prête à répondre à tes questions — en français.',
       avatarImage: '/avatars/solene-fr.gif',
       accentClass: 'bg-synthesis-dark text-white',
       visualizerVariant: 'synthesis' as const,
       visualizerBgColor: '#7C3AED',
       connectingLabel: 'Solène (Français)',
+      endCard: {
+        title: 'Session terminée',
+        body: "Merci d'avoir appris avec moi aujourd'hui. Garde l'élan : essaie une chose dont on a parlé, et rejoins un bootcamp ou un hub hackathon Dev3pack pour continuer à apprendre avec la communauté.",
+        linkLabel: 'Découvrir Dev3pack',
+        saveLabel: 'Enregistrer la session',
+        againLabel: "Poser d'autres questions",
+      },
+      inputPlaceholder: 'Écris ta question…',
+      sendLabel: 'Envoyer',
+      muteLabel: 'Couper le son de Solène',
+      unmuteLabel: 'Réactiver le son de Solène',
+      endHint: "Dis « Au revoir » ou appuie sur « End » pour terminer la session",
     },
   },
-
-  // Social share copy templates
-  shareCopies: [
-    `Just had a 5-minute mentor session with Solène at @dev3pack.\n\n"What's the smallest version you could ship this week?"\n\nFair point.\n\nTry it → dev3pack.xyz`,
-    `Solène asked me what I'd build first if I had to ship by Sunday.\n\nGreat question.\n\nGo talk to her: dev3pack.xyz\n@dev3pack`,
-    `Pitched my Web3 + AI idea to Solène (Dev3pack founder, AI version).\n\nWalked away with a clearer next step than I had going in.\n\ndev3pack.xyz\n@dev3pack`,
-    `Like having a Dev3pack mentor on demand.\n\nWarm. Practical. Actually useful.\n\nGo vibe → dev3pack.xyz\n@dev3pack`,
-    `Talked to Solène about my project.\n\nNow I have to actually build it.\n\nIf you need builder feedback, try it → dev3pack.xyz\n@dev3pack`,
-  ],
-
-  shareCopiesWithZora: [
-    `Ran my idea through Solène (@dev3pack, AI version).\nCame out with a plan to build.\n\nMinted this for the record → {{zora_link}}\n\ndev3pack.xyz`,
-    `Talked to Solène at Dev3pack.\nKept the receipts.\n\nMinted → {{zora_link}}\n\ndev3pack.xyz`,
-    `Solène said "just build it."\nSo I'm minting the proof.\n\n→ {{zora_link}}\n\ndev3pack.xyz`,
-  ],
 
   // Wallet metadata (only used if Zora minting / wallet flows are enabled)
   walletMetadata: {
@@ -78,13 +87,6 @@ export const personaConfig = {
     description: 'Talk to Solène Daviaud, founder of Dev3pack',
     url: 'https://dev3pack.xyz',
     icons: ['https://avatars.githubusercontent.com/u/2653167'],
-  },
-
-  // Share frame
-  shareFrame: {
-    prompt: '> dev3pack_',
-    excitedAvatarImage: '/frame/austin-t-excited.png',
-    criticalAvatarImage: '/frame/austin-t-critical.png',
   },
 };
 

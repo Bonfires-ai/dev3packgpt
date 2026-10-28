@@ -1,4 +1,4 @@
-import useCombinedTranscriptions from '@/hooks/useCombinedTranscriptions';
+import type { Transcription } from '@/hooks/useCombinedTranscriptions';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import { useVoiceAssistant } from '@livekit/components-react';
 import clsx from 'clsx';
@@ -113,7 +113,7 @@ import * as React from 'react';
 //   return transcriptions;
 // };
 
-const sanitizeText = (text: string) => {
+export const sanitizeText = (text: string) => {
   // Strip markdown-ish chars only. Keep apostrophes — "we've" must stay "we've".
   // Also patch crypto jargon Deepgram spells out (safety net even with
   // server-side `replace` config, since smart_format misses some patterns).
@@ -135,7 +135,7 @@ interface Segment {
  * which would render every breath as a separate bubble. Merge consecutive
  * same-role segments into a single bubble to match natural speech.
  */
-const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] => {
+export const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] => {
   const merged: T[] = [];
   for (const seg of segments) {
     const last = merged[merged.length - 1];
@@ -148,9 +148,13 @@ const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] => {
   return merged;
 };
 
-export default function TranscriptionView({ mood }: { mood: AgentMoodI }) {
-  const combinedTranscriptions = useCombinedTranscriptions();
-
+export default function TranscriptionView({
+  mood,
+  combinedTranscriptions,
+}: {
+  mood: AgentMoodI;
+  combinedTranscriptions: Transcription[];
+}) {
   const { state } = useVoiceAssistant();
 
   const isThinking = state === 'thinking' || state === 'connecting';
@@ -193,7 +197,7 @@ export default function TranscriptionView({ mood }: { mood: AgentMoodI }) {
 
   return (
     <div
-      className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden py-8 md:w-[700px] w-full pb-44 md:pb-40 px-4"
+      className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden py-8 md:w-[700px] w-full pb-64 md:pb-60 px-4"
       onWheel={preventAutoScrollOnHumanScroll}
       onTouchStart={preventAutoScrollOnHumanScroll}
     >

@@ -2,7 +2,7 @@ import { useTrackTranscription, useVoiceAssistant } from '@livekit/components-re
 import { useEffect, useMemo, useRef } from 'react';
 import useLocalMicTrack from './useLocalMicTrack';
 
-interface Transcription {
+export interface Transcription {
   id: string;
   text: string;
   role: 'assistant' | 'user';
@@ -12,12 +12,13 @@ interface Transcription {
 /**
  * Custom hook for combining agent and user transcriptions.
  *
- * This hook manages the combination of transcriptions from the voice assistant and the user's microphone.
+ * This hook manages the combination of transcriptions from the voice assistant, the user's microphone,
+ * and messages the user typed (which the agent does not echo back as transcriptions).
  * It provides a combined list of transcriptions sorted by the time they were first received.
  *
  * @returns {Transcription[]} Combined list of transcriptions
  */
-export default function useCombinedTranscriptions() {
+export default function useCombinedTranscriptions(typedMessages: Transcription[] = []) {
   const { agentTranscriptions, state } = useVoiceAssistant();
 
   const backupTranscriptions = useRef<Transcription[]>([]);
@@ -33,8 +34,9 @@ export default function useCombinedTranscriptions() {
       ...userTranscriptions.map(val => {
         return { ...val, role: 'user' };
       }),
+      ...typedMessages,
     ].sort((a, b) => a.firstReceivedTime - b.firstReceivedTime);
-  }, [agentTranscriptions, userTranscriptions]);
+  }, [agentTranscriptions, userTranscriptions, typedMessages]);
 
   useEffect(() => {
     if (state !== 'disconnected') {
