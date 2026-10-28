@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import os
 import random
+import re
 import time
 from asyncio import Task
-from typing import Optional
+from typing import AsyncIterable, Optional
 from dataclasses import dataclass
 
 from livekit.agents import (
@@ -94,6 +95,31 @@ def handle_agent_audio_muted(reader, session: AgentSession):
     task = asyncio.create_task(async_handle_agent_audio_muted(reader, session))
     _active_tasks.add(task)
     task.add_done_callback(lambda t: _active_tasks.remove(t))
+
+
+# A URL stops at whitespace or a parenthesis and gives back trailing punctuation,
+# so "(https://x.y/z)." loses the URL but keeps ")." for _EMPTY_PARENS_RE.
+_URL_RE = re.compile(r"(?:https?://|www\.)[^\s()<>]*[^\s()<>.,;:!?'\"]")
+_EMPTY_PARENS_RE = re.compile(r"\s*\(\s*\)")
+
+
+async def strip_urls(text: AsyncIterable[str]) -> AsyncIterable[str]:
+    """Drop URLs from the text sent to TTS.
+
+    Only the TTS input passes through here, so cited links still show in the
+    text transcript but are never spoken. A chunk is held back from its last
+    whitespace on, so a URL split across chunks is removed whole.
+    """
+    buffer = ""
+    async for chunk in text:
+        buffer += chunk
+        cut = max(buffer.rfind(" "), buffer.rfind("\n"))
+        if cut == -1:
+            continue
+        ready, buffer = buffer[: cut + 1], buffer[cut + 1 :]
+        yield _EMPTY_PARENS_RE.sub("", _URL_RE.sub("", ready))
+    if buffer:
+        yield _EMPTY_PARENS_RE.sub("", _URL_RE.sub("", buffer))
 
 
 async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity for now
@@ -264,6 +290,8 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
         ),
         tts=session_tts,
+        # Defaults plus strip_urls: cited links stay in the text, out of the voice.
+        tts_text_transforms=["filter_markdown", "filter_emoji", strip_urls],
         vad=ctx.proc.userdata["vad"],
         turn_handling={"turn_detection": EnglishModel()},
         userdata=SessionInfo(),
