@@ -9,6 +9,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from livekit.agents import (
+    mcp,
     AgentSession,
     AutoSubscribe,
     JobContext,
@@ -19,7 +20,6 @@ from livekit.plugins import deepgram, elevenlabs, openai
 from livekit.plugins.elevenlabs import VoiceSettings
 from livekit.plugins.turn_detector.english import EnglishModel
 import requests
-from voice_agent import openrouter_tts
 from voice_agent.persona_config import (
     VOICE_SPEED,
     VOICE_STABILITY,
@@ -203,7 +203,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         "smart_format": True,
     }
     if deepgram_language.startswith("en"):
-        stt_kwargs["keyterms"] = stt_words
+        stt_kwargs["keyterm"] = stt_words
 
     # ElevenLabs carries the cloned Solène voices. Without an ElevenLabs key,
     # fall back to OpenRouter TTS (stock voice) on the same key as the LLM.
@@ -220,12 +220,30 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             ),
         )
     else:
+        # Grok Voice: cheapest OpenRouter TTS with conversational latency (~1s to
+        # first byte, $15/1M chars), auto-detects French. Returns 24kHz PCM, the
+        # rate the openai plugin assumes.
         logger.warning("ELEVEN_API_KEY not set — falling back to OpenRouter TTS")
-        session_tts = openrouter_tts.TTS(
+        session_tts = openai.TTS(
+            base_url="https://openrouter.ai/api/v1",
             api_key=os.environ["OPENROUTER_API_KEY"],
-            model=os.environ.get("OPENROUTER_TTS_MODEL", openrouter_tts.DEFAULT_MODEL),
-            voice=os.environ.get("OPENROUTER_TTS_VOICE", openrouter_tts.DEFAULT_VOICE),
+            model=os.environ.get("OPENROUTER_TTS_MODEL", "x-ai/grok-voice-tts-1.0"),
+            voice=os.environ.get("OPENROUTER_TTS_VOICE", "eve"),
+            response_format="pcm",
         )
+
+    # Bonfires MCP server (mcp-server/ in dev3pack-mcp) for the knowledge tools.
+    # Deployed servers take an API key from their MCP_API_KEYS.
+    mcp_server = None
+    if os.environ.get("BONFIRES_MCP_URL"):
+        mcp_server = mcp.MCPServerHTTP(
+            url=os.environ["BONFIRES_MCP_URL"],
+            headers={"Authorization": f"Bearer {os.environ.get('BONFIRES_MCP_KEY', '')}"},
+            allowed_tools=["search_documents", "search_knowledge_graph"],
+            client_session_timeout_seconds=15,
+        )
+    else:
+        logger.warning("BONFIRES_MCP_URL not set — agent has no knowledge tools")
 
     session = AgentSession(
         stt=deepgram.STT(**stt_kwargs),
@@ -236,7 +254,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         ),
         tts=session_tts,
         vad=ctx.proc.userdata["vad"],
-        turn_detection=EnglishModel(),
+        turn_handling={"turn_detection": EnglishModel()},
         userdata=SessionInfo(),
     )
 
@@ -244,7 +262,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     session.userdata.mood = mood
 
     # Agent that will power the conversation
-    agent = Assistant(system_prompt)
+    agent = Assistant(system_prompt, mcp_server=mcp_server)
 
     # ------------------------------------------------------------------
     # Local state tracking – kept as simple primitives to avoid overhead

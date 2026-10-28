@@ -3,10 +3,9 @@ import os
 import random
 import requests
 
-from livekit.agents import Agent, function_tool, get_job_context, JobProcess, RunContext
+from livekit.agents import Agent, function_tool, get_job_context, JobProcess, RunContext, mcp
 from livekit.plugins import silero
 
-from voice_agent import bonfires
 from voice_agent.constants import mood_insufficient_info_end_messages
 from voice_agent.logger import get_logger
 
@@ -74,40 +73,17 @@ def prewarm(proc: JobProcess) -> None:
 class Assistant(Agent):
     """Conversation agent that also exposes a *end_conversation* tool."""
 
-    def __init__(self, system_prompt: str) -> None:  # noqa: D401
-        """Create a new Assistant with *system_prompt* as its instructions."""
-        super().__init__(instructions=system_prompt)
+    def __init__(self, system_prompt: str, mcp_server: mcp.MCPServer | None = None) -> None:  # noqa: D401
+        """Create a new Assistant with *system_prompt* as its instructions.
+
+        *mcp_server* (the Bonfires MCP server) supplies the knowledge tools.
+        """
+        tools = [mcp.MCPToolset(id="bonfires", mcp_server=mcp_server)] if mcp_server else []
+        super().__init__(instructions=system_prompt, tools=tools)
 
     # ------------------------------------------------------------------
     # Tooling -----------------------------------------------------------
     # ------------------------------------------------------------------
-
-    @function_tool()
-    async def search_knowledge(
-        self,
-        context: RunContext,
-        query: str,
-    ) -> str:
-        """Search your personal knowledge graph to recall your views and experiences.
-
-        This is your memory — your writings, tweets, talks, and direct input.
-        Use it to recall what you actually think about a topic before responding.
-        Call this whenever you're giving feedback on a project, discussing
-        Solana development, builder tools, architecture, AI agents, or web3 concepts.
-
-        Parameters
-        ----------
-        query:
-            What you want to recall from your own knowledge.
-            Examples: "my views on x402 payments",
-            "what I think about Solana NFT projects",
-            "my approach to teaching Solidity",
-            "Dev3pack hackathon best practices".
-        """
-        logger.info("search_knowledge called with query: %s", query)
-        result = await bonfires.delve(query)
-        logger.debug("search_knowledge result length: %d", len(result))
-        return result
 
     @function_tool()
     async def end_conversation(
