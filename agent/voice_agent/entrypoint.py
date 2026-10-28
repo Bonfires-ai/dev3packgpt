@@ -34,11 +34,8 @@ from voice_agent.assistant import Assistant, prewarm
 from voice_agent import bonfires
 from voice_agent.constants import (
     build_mood_prompt,
-    CALL_DURATION_WARNING_TIME,
     ELEVENLABS_DEFAULT_VOICE_ID,
-    MAX_CALL_DURATION,
     TIMEOUT_WARNING_TIME,
-    SPEAK_DELAY,
     TIMEOUT_SECONDS,
     mood_initial_greetings,
 )
@@ -81,6 +78,20 @@ def handle_user_end_conversation(
     task = asyncio.create_task(
         async_handle_user_end_conversation(reader, participant_identity, ctx, session)
     )
+    _active_tasks.add(task)
+    task.add_done_callback(lambda t: _active_tasks.remove(t))
+
+
+async def async_handle_agent_audio_muted(reader, session: AgentSession):
+    muted = (await reader.read_all()).strip() == "true"
+    logger.info("Agent audio %s by user", "muted" if muted else "unmuted")
+    # With audio output off, replies skip TTS entirely and go out as text
+    # transcriptions only, so a muted session makes no TTS calls.
+    session.output.set_audio_enabled(not muted)
+
+
+def handle_agent_audio_muted(reader, session: AgentSession):
+    task = asyncio.create_task(async_handle_agent_audio_muted(reader, session))
     _active_tasks.add(task)
     task.add_done_callback(lambda t: _active_tasks.remove(t))
 
@@ -271,8 +282,6 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     still_there_prompt_sent = False
     is_agent_speaking = False
     is_user_speaking = False
-    call_start_time = time.time()
-    duration_warning_sent = False
 
     # Convenience -----------------------------------------------------------------
 
@@ -321,7 +330,6 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             )
 
     async def monitor_interaction() -> None:
-        nonlocal duration_warning_sent
         while True:
             logger.info(
                 "is_agent_speaking=%s | is_user_speaking=%s | still_there_prompt_sent=%s",
@@ -333,54 +341,6 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             # Reset idle timer when either party is talking
             if (is_agent_speaking or is_user_speaking) and not still_there_prompt_sent:
                 reset_timeout()
-
-            # ---- Call duration monitoring ----------------------------------
-            elapsed = int(time.time() - call_start_time)
-
-            if elapsed >= CALL_DURATION_WARNING_TIME and not duration_warning_sent:
-                logger.info("Sending call duration warning")
-
-                session.input.set_audio_enabled(False)
-                session.clear_user_turn()
-
-                speech_handle = session.say(
-                    "I gotta run quick, but I'd love to hear more about what you're building! Please wrap up any important points you'd like to discuss soon!",
-                    allow_interruptions=False,
-                )
-                if session.current_speech is not None:
-                    await session.current_speech.wait_for_playout()
-
-                await speech_handle.wait_for_playout()
-
-                duration_warning_sent = True
-
-                session.input.set_audio_enabled(True)
-
-            if elapsed >= MAX_CALL_DURATION:
-                logger.info("Max call duration reached – wrapping up")
-
-                # Stop listening to the user while we send the goodbye message
-                session.input.set_audio_enabled(False)
-                session.clear_user_turn()
-
-                speech_handle = session.say(
-                    "Aha! This was fun, but I'm afraid that's all that we have for today. I can't wait to see your idea come to life!",
-                    allow_interruptions=False,
-                )
-                if session.current_speech is not None:
-                    await session.current_speech.wait_for_playout()
-
-                await speech_handle.wait_for_playout()
-
-                await session.generate_reply(
-                    instructions=(
-                        "The conversation has concluded. Please call the `end_conversation` function to end the call..."
-                    ),
-                    allow_interruptions=False,
-                )
-
-                await asyncio.sleep(SPEAK_DELAY)
-                break
 
             # ---- Idle timeout ---------------------------------------------
             if await should_end_call():
@@ -433,6 +393,12 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         is_user_speaking = ev.new_state == "speaking"
         reset_timeout()
 
+    # Typed messages (lk.chat) never change the user's speaking state, and a
+    # muted agent reply is text only, so count every new message as activity.
+    @session.on("conversation_item_added")
+    def _on_conversation_item_added(ev):
+        reset_timeout()
+
     # ------------------------------------------------------------------
     # Register Text Stream Handlers ------------------------------------
     # ------------------------------------------------------------------
@@ -442,6 +408,11 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         lambda reader, participant_identity: handle_user_end_conversation(
             reader, participant_identity, ctx, session
         ),
+    )
+
+    ctx.room.register_text_stream_handler(
+        "agent_audio_muted",
+        lambda reader, participant_identity: handle_agent_audio_muted(reader, session),
     )
 
     # ------------------------------------------------------------------

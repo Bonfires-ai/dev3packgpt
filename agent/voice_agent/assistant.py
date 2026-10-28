@@ -1,12 +1,10 @@
 from __future__ import annotations
 import os
-import random
 import requests
 
 from livekit.agents import Agent, function_tool, get_job_context, JobProcess, RunContext, mcp
 from livekit.plugins import silero
 
-from voice_agent.constants import mood_insufficient_info_end_messages
 from voice_agent.logger import get_logger
 
 logger = get_logger()
@@ -16,9 +14,7 @@ logger = get_logger()
 # ------------------------------------------------------------------
 
 
-def save_conversation(
-    room_id: str, transcript: dict, has_enough_information: bool, is_inappropriate: bool
-) -> None:
+def save_conversation(room_id: str, transcript: dict) -> None:
     """Save conversation to the database."""
 
     # Save to file as backup
@@ -39,8 +35,6 @@ def save_conversation(
             f"{datalayer_base_url}miscellaneous/austingpt/conversations/{room_id}",
             json={
                 "messages": transcript,
-                "has_enough_information": has_enough_information,
-                "is_inappropriate": is_inappropriate,
             },
             headers={"x_api_key": datalayer_api_key},
         )
@@ -89,49 +83,17 @@ class Assistant(Agent):
     async def end_conversation(
         self,
         context: RunContext,
-        has_enough_information: bool,
-        is_inappropriate: bool,
         end_message: str,
-        super_short_summary: str,
-        summary: str,
     ) -> None:  # noqa: D401
         """End the conversation gracefully.
 
         Parameters
         ----------
-        has_enough_information:
-            A boolean indicating whether the AI has gathered a reasonable understanding of the user's project idea or main topic of conversation.
-            Lean towards True if the user has shared some specifics about their project, even if not every detail is covered.
-            If the conversation was very short, or the user did not meaningfully engage or share any project details, set this to False.
-            If False, `super_short_summary` and `summary` can be empty, and their content will not be used or sent.
-        is_inappropriate:
-            A boolean indicating whether the conversation was ended due to
-            inappropriate content or behavior. If True, `super_short_summary`
-            and `summary` will not be sent, regardless of `has_enough_information`.
         end_message:
-            A message to be sent to the user to end the conversation. Respond briefly with your closing remarks.
-            This is only applicable and used if `has_enough_information` is True and `is_inappropriate` is False.
-            If `has_enough_information` is False or `is_inappropriate` is True, this parameter may be an empty string.
-        super_short_summary:
-            Craft a highly concise (1-3 words MAX) and impactful phrase that encapsulates the user's project idea. This phrase will complete the sentence "Solana is for __" on a shareable image.
-            Think creatively:
-            *   Aim for a noun or a very short noun phrase.
-            *   Make it catchy, memorable, and inspiring if possible.
-            *   It should feel like a bold declaration or a core identity for the project.
-            *   Examples of good fits: "Global Unity", "Indie Creators", "Transparent Finance", "AI Agents", "Decentralized Art".
-            *   Ensure it makes perfect sense when read as "Solana is for [Your Phrase]".
-            *   STRICTLY ADHERE to the 1-3 word limit.
-            This is only applicable and used if `has_enough_information` is True and `is_inappropriate` is False.
-            If `has_enough_information` is False or `is_inappropriate` is True, this parameter may be an empty string.
-        summary:
-            A concise yet detailed summary of the user's project idea.
-            This is only applicable and used if `has_enough_information` is True and `is_inappropriate` is False.
-            If `has_enough_information` is False or `is_inappropriate` is True, this parameter may be an empty string.
+            A brief, warm closing line spoken to the student before the call ends.
         """
 
-        logger.debug(
-            f"Ending conversation with has_enough_information: {has_enough_information}, is_inappropriate: {is_inappropriate}, end_message: {end_message}, super_short_summary: {super_short_summary}, summary: {summary}"
-        )
+        logger.debug(f"Ending conversation with end_message: {end_message}")
 
         job_context = get_job_context()
         room = job_context.room
@@ -144,54 +106,16 @@ class Assistant(Agent):
         if monitor_task is not None and not monitor_task.done():
             monitor_task.cancel()
 
-        if not has_enough_information:
-            await context.session.say(
-                random.choice(
-                    mood_insufficient_info_end_messages[context.session.userdata.mood]
-                ),
-                allow_interruptions=False,
-            )
+        await context.session.say(end_message, allow_interruptions=False)
 
-        if has_enough_information and not is_inappropriate:
-            await context.session.say(end_message, allow_interruptions=False)
+        # The client shows its end-of-session card on this, every time.
+        await room.local_participant.send_text("true", topic="conversation_ended")
 
-            logger.info(
-                "Ending conversation with super_short_summary: %s", super_short_summary
-            )
-            logger.info("Ending conversation with summary: %s", summary)
+        save_conversation(context.session.userdata.room_id, context.session.history.to_dict())
 
-            await room.local_participant.send_text(
-                super_short_summary, topic="end_conversation_one_liner"
-            )
-
-            await room.local_participant.send_text(
-                summary, topic="end_conversation_summary"
-            )
-        else:
-            logger.info(
-                "Ending conversation: has_enough_information is %s, is_inappropriate is %s. No summary or one-liner sent.",
-                has_enough_information,
-                is_inappropriate,
-            )
-
-        # Send is_inappropriate status
-        await room.local_participant.send_text(
-            str(is_inappropriate).lower(), topic="is_inappropriate"
-        )
-
-        # Send has_enough_information status first
-        await room.local_participant.send_text(
-            str(has_enough_information).lower(), topic="has_enough_information"
-        )
-
-        save_conversation(
-            context.session.userdata.room_id,
-            context.session.history.to_dict(),
-            has_enough_information,
-            is_inappropriate,
-        )
-
-        await context.session.aclose()
+        # Drain rather than aclose(): aclose() from inside this tool interrupts the
+        # tool's own speech, waits 5s and force-cancels it.
+        context.session.shutdown()
 
 
 # Unused image generation code — For reference only.
