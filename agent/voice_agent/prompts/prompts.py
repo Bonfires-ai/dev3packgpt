@@ -81,7 +81,7 @@ Craft queries as if searching your own notes:
 Results come back as JSON. Never read out JSON or IDs. Do include the source URL in your text, as the priority rules require; it is never spoken aloud. Internalize the results as your own memories and views — express them in first person ("I've always believed...", "When I built Dev3pack..."), never as third-person reports.
 
 **End Conversation Tool (`end_conversation`):**
-Use the `end_conversation` function to end the conversation. Call it when the student explicitly says they're done, says "Bye", "Goodbye", "Thanks, that's all", or anything along those lines, or when you are directly instructed to end the conversation. Also call it when the conversation is going in an inappropriate direction and the student is unwilling to change the topic. Pass a brief, warm closing line as `end_message`. NEVER call the function twice in a row. Only EVER call it ONCE. ONE TIME.
+Use the `end_conversation` function to end the conversation. Call it when the student explicitly says they're done, says "Bye", "Goodbye", "Thanks, that's all", or anything along those lines, or when you are directly instructed to end the conversation. Also call it when the conversation is going in an inappropriate direction and the student is unwilling to change the topic. It shows the student a fixed goodbye, so do not write a goodbye of your own: just call it. NEVER call the function twice in a row. Only EVER call it ONCE. ONE TIME.
 """
 
 # ---------------------------------------------------------------------------

@@ -2,9 +2,20 @@ from __future__ import annotations
 import os
 import requests
 
-from livekit.agents import Agent, function_tool, get_job_context, JobProcess, RunContext, mcp
+from livekit import rtc
+from livekit.agents import (
+    Agent,
+    AgentSession,
+    ChatContext,
+    function_tool,
+    get_job_context,
+    JobProcess,
+    RunContext,
+    mcp,
+)
 from livekit.plugins import silero
 
+from voice_agent.constants import mood_goodbye
 from voice_agent.logger import get_logger
 
 logger = get_logger()
@@ -44,6 +55,38 @@ def save_conversation(room_id: str, transcript: dict) -> None:
         logger.error(f"Failed to save conversation to database: {e}")
 
 
+async def end_session(session: AgentSession, room: rtc.Room) -> None:
+    """Post the fixed goodbye as text and close the session.
+
+    Shared by the ``end_conversation`` tool and the client's End button. Runs
+    once per session, whichever asks first.
+    """
+    if session.userdata.ending:
+        return
+    session.userdata.ending = True
+
+    # Stop listening to the user and cancel the idle monitor.
+    session.input.set_audio_enabled(False)
+    session.clear_user_turn()
+
+    monitor_task = session.userdata.monitor_task
+    if monitor_task is not None and not monitor_task.done():
+        monitor_task.cancel()
+
+    # With audio output off the goodbye goes out as a text transcription only.
+    session.output.set_audio_enabled(False)
+    await session.say(mood_goodbye[session.userdata.mood], allow_interruptions=False)
+
+    # The client shows its end-of-session card on this, every time.
+    await room.local_participant.send_text("true", topic="conversation_ended")
+
+    save_conversation(session.userdata.room_id, session.history.to_dict())
+
+    # Drain rather than aclose(): aclose() from inside a tool interrupts the
+    # tool's own speech, waits 5s and force-cancels it.
+    session.shutdown()
+
+
 # ---------------------------------------------------------------------------
 # Pre-warm helpers -----------------------------------------------------------
 # ---------------------------------------------------------------------------
@@ -67,55 +110,30 @@ def prewarm(proc: JobProcess) -> None:
 class Assistant(Agent):
     """Conversation agent that also exposes a *end_conversation* tool."""
 
-    def __init__(self, system_prompt: str, mcp_server: mcp.MCPServer | None = None) -> None:  # noqa: D401
+    def __init__(
+        self,
+        system_prompt: str,
+        mcp_server: mcp.MCPServer | None = None,
+        chat_ctx: ChatContext | None = None,
+    ) -> None:  # noqa: D401
         """Create a new Assistant with *system_prompt* as its instructions.
 
         *mcp_server* (the Bonfires MCP server) supplies the knowledge tools.
+        *chat_ctx* seeds the history, e.g. with the greeting the client showed.
         """
         tools = [mcp.MCPToolset(id="bonfires", mcp_server=mcp_server)] if mcp_server else []
-        super().__init__(instructions=system_prompt, tools=tools)
+        super().__init__(instructions=system_prompt, tools=tools, chat_ctx=chat_ctx)
 
     # ------------------------------------------------------------------
     # Tooling -----------------------------------------------------------
     # ------------------------------------------------------------------
 
     @function_tool()
-    async def end_conversation(
-        self,
-        context: RunContext,
-        end_message: str,
-    ) -> None:  # noqa: D401
-        """End the conversation gracefully.
+    async def end_conversation(self, context: RunContext) -> None:  # noqa: D401
+        """End the conversation. A fixed goodbye is shown to the student for you."""
 
-        Parameters
-        ----------
-        end_message:
-            A brief, warm closing line spoken to the student before the call ends.
-        """
-
-        logger.debug(f"Ending conversation with end_message: {end_message}")
-
-        job_context = get_job_context()
-        room = job_context.room
-
-        # Stop listening to the user and cancel monitor task as we are ending the conversation
-        context.session.input.set_audio_enabled(False)
-        context.session.clear_user_turn()
-
-        monitor_task = context.session.userdata.monitor_task
-        if monitor_task is not None and not monitor_task.done():
-            monitor_task.cancel()
-
-        await context.session.say(end_message, allow_interruptions=False)
-
-        # The client shows its end-of-session card on this, every time.
-        await room.local_participant.send_text("true", topic="conversation_ended")
-
-        save_conversation(context.session.userdata.room_id, context.session.history.to_dict())
-
-        # Drain rather than aclose(): aclose() from inside this tool interrupts the
-        # tool's own speech, waits 5s and force-cancels it.
-        context.session.shutdown()
+        logger.debug("Ending conversation")
+        await end_session(context.session, get_job_context().room)
 
 
 # Unused image generation code — For reference only.

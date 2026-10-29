@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import random
 import re
 import time
 from asyncio import Task
@@ -13,6 +12,7 @@ from livekit.agents import (
     mcp,
     AgentSession,
     AutoSubscribe,
+    ChatContext,
     JobContext,
     WorkerOptions,
     cli,
@@ -31,14 +31,14 @@ from voice_agent.persona_config import (
     VOICE_ID_BY_MOOD,
 )
 from voice_agent.stt_words import stt_words
-from voice_agent.assistant import Assistant, prewarm
+from voice_agent.assistant import Assistant, end_session, prewarm
 from voice_agent import bonfires
 from voice_agent.constants import (
     build_mood_prompt,
     ELEVENLABS_DEFAULT_VOICE_ID,
     TIMEOUT_WARNING_TIME,
     TIMEOUT_SECONDS,
-    mood_initial_greetings,
+    mood_greeting,
 )
 from voice_agent.logger import get_logger
 
@@ -52,25 +52,21 @@ class SessionInfo:
     room_id: str | None = None
     mood: str | None = None
     monitor_task: Task[None] | None = None
+    ending: bool = False
 
 
 async def async_handle_user_end_conversation(
     reader, participant_identity, ctx: JobContext, session: AgentSession
 ):
+    await reader.read_all()
+
     try:
         await session.interrupt()
     except Exception:
         await session.current_speech.wait_for_playout()
 
-    session.input.set_audio_enabled(False)
-    session.clear_user_turn()
-
-    await reader.read_all()
-
-    await session.generate_reply(
-        user_input="Goodbye for now. Please end the conversation",
-        allow_interruptions=False,
-    )
+    # The End button skips the LLM: post the fixed goodbye and close.
+    await end_session(session, ctx.room)
 
 
 def handle_user_end_conversation(
@@ -192,8 +188,6 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             "Skipping analytics datalayer call - required environment variables not defined"
         )
 
-    greetings = mood_initial_greetings[mood]
-
     # ------------------------------------------------------------------
     # Prime the agent with knowledge context — static markdown files plus
     # the live Bonfires knowledge graph if configured.
@@ -300,8 +294,13 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     session.userdata.room_id = room_id
     session.userdata.mood = mood
 
+    # The client shows the greeting as soon as the room connects, without voice,
+    # so it only needs to be in the history for the LLM to know it was said.
+    chat_ctx = ChatContext.empty()
+    chat_ctx.add_message(role="assistant", content=mood_greeting[mood])
+
     # Agent that will power the conversation
-    agent = Assistant(system_prompt, mcp_server=mcp_server)
+    agent = Assistant(system_prompt, mcp_server=mcp_server, chat_ctx=chat_ctx)
 
     # ------------------------------------------------------------------
     # Local state tracking – kept as simple primitives to avoid overhead
@@ -448,12 +447,6 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     # ------------------------------------------------------------------
 
     await session.start(room=ctx.room, agent=agent)
-
-    greeting = random.choice(greetings)
-
-    greet_handle = await session.say(text=greeting, allow_interruptions=False)
-
-    await greet_handle.wait_for_playout()
 
     reset_timeout()
 
