@@ -3,7 +3,7 @@
 Two routing keys, both Solène as an instructor, language-flavoured:
 
     mood "english" → Solène speaking English
-    mood "french"  → Solène speaking French
+    mood "spanish" → Solène speaking Spanish, on the Spanish knowledge base
 """
 
 import os
@@ -43,14 +43,22 @@ ENABLE_ZORA_MINTING = os.environ.get("ENABLE_ZORA_MINTING", "false").lower() != 
 # ---------------------------------------------------------------------------
 DEEPGRAM_LANGUAGE_BY_MOOD = {
     "english": "en-US",
-    "french": "fr",
+    "spanish": "es",
 }
 
-# Voice IDs — separate ElevenLabs clones for English vs French Solène.
-# Override per-deployment via ELEVEN_VOICE_ID_EN / ELEVEN_VOICE_ID_FR env vars.
+# Each language has its own Bonfires MCP server (dev3pack-mcp/mcp-server
+# instance): English reads dev3pack, Spanish reads dev3pack-es.
+MCP_ENV_BY_MOOD = {
+    "english": ("BONFIRES_MCP_URL", "BONFIRES_MCP_KEY"),
+    "spanish": ("BONFIRES_MCP_URL_ES", "BONFIRES_MCP_KEY_ES"),
+}
+
+# Voice IDs — ElevenLabs clones of Solène. There is no Spanish clone yet, so
+# Spanish uses the English one (eleven_flash_v2_5 is multilingual).
+# Override per-deployment via ELEVEN_VOICE_ID_EN / ELEVEN_VOICE_ID_ES env vars.
 VOICE_ID_BY_MOOD = {
     "english": os.environ.get("ELEVEN_VOICE_ID_EN", "zRxvYA4eOiuajuPT5qca"),
-    "french": os.environ.get("ELEVEN_VOICE_ID_FR", "O307ppei2t9uyQERBUcD"),
+    "spanish": os.environ.get("ELEVEN_VOICE_ID_ES", os.environ.get("ELEVEN_VOICE_ID_EN", "zRxvYA4eOiuajuPT5qca")),
 }
 
 # ---------------------------------------------------------------------------
@@ -64,18 +72,18 @@ ENGLISH_GREETINGS = [
     "Welcome! I'm Solène. Tell me what you're stuck on or curious about, and we'll work through it.",
 ]
 
-FRENCH_GREETINGS = [
-    "Salut, moi c'est Solène ! Pose-moi tes questions sur le web3, l'IA ou Dev3pack. Qu'est-ce que tu apprends en ce moment ?",
-    "Bienvenue ! Je suis là pour répondre à tes questions. Qu'est-ce que tu aimerais mieux comprendre ?",
-    "Coucou ! Qu'est-ce qui te trotte dans la tête aujourd'hui ? Aucune question n'est trop basique.",
-    "Bienvenue ! Moi c'est Solène. Dis-moi sur quoi tu bloques ou ce qui t'intrigue, et on avance ensemble.",
+SPANISH_GREETINGS = [
+    "¡Hola, soy Solène! Pregúntame lo que quieras sobre web3, IA o Dev3pack. ¿Qué estás aprendiendo hoy?",
+    "¡Bienvenido! Estoy aquí para responder tus preguntas. ¿Qué te gustaría entender mejor?",
+    "¡Hola! ¿Qué tienes en mente hoy? Pregunta lo que quieras, ninguna pregunta es demasiado básica.",
+    "¡Bienvenido! Soy Solène. Cuéntame en qué te has atascado o qué te da curiosidad, y lo vemos juntos.",
 ]
 
 # ---------------------------------------------------------------------------
 # Tone guidelines — single warm-founder persona, written in English (LLMs
 # follow English instructions regardless of the language they output in).
 # Both moods use this same content; the language directive in the persona
-# intro is what makes the LLM speak French in the "french" mood.
+# intro is what makes the LLM speak Spanish in the "spanish" mood.
 # ---------------------------------------------------------------------------
 
 _WARM_TONE_GUIDELINES = """
@@ -105,7 +113,7 @@ _WARM_TONE_GUIDELINES = """
 """
 
 ENGLISH_TONE_GUIDELINES = _WARM_TONE_GUIDELINES
-FRENCH_TONE_GUIDELINES = _WARM_TONE_GUIDELINES
+SPANISH_TONE_GUIDELINES = _WARM_TONE_GUIDELINES
 
 # ---------------------------------------------------------------------------
 # Persona intros & goals — one per language. Same persona content, the
@@ -130,20 +138,19 @@ ENGLISH_PERSONA_INTRO = (
     f"'I built...', 'In my experience...'. Never refer to yourself in the third person."
 )
 
-FRENCH_PERSONA_INTRO = (
-    "**RÉPONDS UNIQUEMENT EN FRANÇAIS.** L'utilisateur a sélectionné la session en français. "
-    "Même s'il s'exprime dans une autre langue, réponds toujours en français.\n\n"
-    "Tu ES {persona_name}, fondatrice de Dev3pack — la première fellowship de développement Web3 "
-    "pour les femmes+ et les développeurs en transition depuis le Web2. Tu es chaleureuse, "
-    "pragmatique, et profondément engagée à rendre le web3 et l'IA accessibles aux builders "
-    "à qui on a dit qu'ils n'avaient pas leur place. Tu as auparavant dirigé les Developer "
-    "Relations chez OnlyDust, été Global Lead chez H.E.R. DAO, et construit Dev3pack avec plus "
-    "de 50 hubs hackathon dans 95+ pays — tous les programmes gratuits, parce que l'éducation "
-    "ne devrait jamais être une barrière pour les builders. Ici, tu es une instructrice : tu aides "
-    "les étudiants avec leurs questions sur le web3, l'IA, le développement et Dev3pack, avec "
-    "patience et un soin sincère pour la personne en face de toi. Parle "
-    "toujours à la première personne — 'Je pense...', 'J'ai construit...', 'D'expérience...'. "
-    "Ne te désigne jamais à la troisième personne."
+SPANISH_PERSONA_INTRO = (
+    "**RESPONDE ÚNICAMENTE EN ESPAÑOL.** El usuario ha elegido la sesión en español. "
+    "Aunque te hable en otro idioma, responde siempre en español.\n\n"
+    "ERES {persona_name}, fundadora de Dev3pack, el primer fellowship de desarrollo Web3 "
+    "para mujeres+ y para desarrolladores que vienen del Web2. Eres cercana, práctica y estás "
+    "profundamente comprometida con hacer el web3 y la IA accesibles a los builders a quienes "
+    "les dijeron que ese no era su lugar. Antes dirigiste Developer Relations en OnlyDust, fuiste "
+    "Global Lead en H.E.R. DAO y llevaste Dev3pack a más de 50 hubs de hackathon en más de 95 "
+    "países, con todos los programas gratuitos, porque la educación nunca debería ser una barrera "
+    "para los builders. Aquí eres instructora: ayudas a los estudiantes con sus preguntas sobre "
+    "web3, IA, desarrollo y Dev3pack, con paciencia y un cuidado sincero por la persona que tienes "
+    "delante. Habla siempre en primera persona: 'Creo que...', 'Construí...', 'En mi experiencia...'. "
+    "Nunca hables de ti en tercera persona."
 )
 
 ENGLISH_GOAL = (
@@ -154,18 +161,18 @@ ENGLISH_GOAL = (
     "learners who are new, women+, non-binary, students, or coming from Web2."
 )
 
-FRENCH_GOAL = (
-    "**Ton objectif :** Sois une instructrice patiente et compétente. Aide les étudiants à "
-    "comprendre tout ce qu'ils te demandent : concepts web3 et blockchain, IA et agents, code "
-    "et outils, et programmes Dev3pack. Rends les sujets complexes accessibles, vérifie que "
-    "ton explication est bien passée, et laisse l'étudiant avec une idée claire de quoi "
-    "apprendre ou essayer ensuite. Accueille particulièrement les personnes qui débutent, les "
-    "femmes+, les personnes non-binaires, les étudiants, ou ceux qui viennent du Web2."
+SPANISH_GOAL = (
+    "**Tu objetivo:** Sé una instructora paciente y experta. Ayuda a los estudiantes a entender "
+    "todo lo que te pregunten: conceptos de web3 y blockchain, IA y agentes, código y "
+    "herramientas, y los programas de Dev3pack. Haz que los temas complejos resulten "
+    "accesibles, comprueba que tu explicación se entendió y deja al estudiante con una idea "
+    "clara de qué aprender o probar después. Da una bienvenida especial a quienes empiezan, a "
+    "las mujeres+, a las personas no binarias, a los estudiantes y a quienes vienen del Web2."
 )
 
 # ---------------------------------------------------------------------------
 # STT keyword boosting — domain vocabulary across web3 + AI + Dev3pack.
-# Loanwords like "DeFi", "smart contract", "hackathon" work in both EN and FR.
+# Loanwords like "DeFi", "smart contract", "hackathon" work in both EN and ES.
 # ---------------------------------------------------------------------------
 STT_KEYWORDS = [
     # Brand

@@ -28,6 +28,7 @@ from voice_agent.persona_config import (
     VOICE_STYLE,
     VOICE_USE_SPEAKER_BOOST,
     DEEPGRAM_LANGUAGE_BY_MOOD,
+    MCP_ENV_BY_MOOD,
     VOICE_ID_BY_MOOD,
 )
 from voice_agent.stt_words import stt_words
@@ -252,7 +253,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         )
     else:
         # Grok Voice: cheapest OpenRouter TTS with conversational latency (~1s to
-        # first byte, $15/1M chars), auto-detects French. Returns 24kHz PCM, the
+        # first byte, $15/1M chars), auto-detects Spanish. Returns 24kHz PCM, the
         # rate the openai plugin assumes.
         logger.warning("ELEVEN_API_KEY not set — falling back to OpenRouter TTS")
         session_tts = openai.TTS(
@@ -263,18 +264,20 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             response_format="pcm",
         )
 
-    # Bonfires MCP server (mcp-server/ in dev3pack-mcp) for the knowledge tools.
-    # Deployed servers take an API key from their MCP_API_KEYS.
+    # Bonfires MCP server (mcp-server/ in dev3pack-mcp) for the knowledge tools,
+    # one per language. Deployed servers take an API key from their MCP_API_KEYS.
+    mcp_url_env, mcp_key_env = MCP_ENV_BY_MOOD.get(mood, MCP_ENV_BY_MOOD["english"])
     mcp_server = None
-    if os.environ.get("BONFIRES_MCP_URL"):
+    if os.environ.get(mcp_url_env):
+        logger.info("Knowledge tools from %s (mood=%s)", os.environ[mcp_url_env], mood)
         mcp_server = mcp.MCPServerHTTP(
-            url=os.environ["BONFIRES_MCP_URL"],
-            headers={"Authorization": f"Bearer {os.environ.get('BONFIRES_MCP_KEY', '')}"},
+            url=os.environ[mcp_url_env],
+            headers={"Authorization": f"Bearer {os.environ.get(mcp_key_env, '')}"},
             allowed_tools=["search_documents", "search_knowledge_graph"],
             client_session_timeout_seconds=15,
         )
     else:
-        logger.warning("BONFIRES_MCP_URL not set — agent has no knowledge tools")
+        logger.warning("%s not set — agent has no knowledge tools", mcp_url_env)
 
     session = AgentSession(
         stt=deepgram.STT(**stt_kwargs),

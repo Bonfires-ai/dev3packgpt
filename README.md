@@ -39,7 +39,7 @@ LiveKit room
        ↓ Deepgram (STT) → OpenRouter LLM → ElevenLabs (TTS)
 ```
 
-- **Agent (`agent/`)** — Python LiveKit Voice Agent. Deepgram for STT (per-language), OpenRouter (`gpt-4.1-mini`) for the LLM, ElevenLabs (`eleven_flash_v2_5`) with separate voice clones for English and French.
+- **Agent (`agent/`)** — Python LiveKit Voice Agent. Deepgram for STT (per-language), OpenRouter (`gpt-4.1-mini`) for the LLM, ElevenLabs (`eleven_flash_v2_5`) with a voice clone of Solène (Spanish uses the English clone).
 - **Client (`client/`)** — Next.js 14 App Router. UI, mood→language routing, Solana wallet adapter (Phantom/Solflare auto-detected), x402 payment flow, JWT-gated LiveKit room access.
 - **Solana x402 payment** — partially-signed USDC SPL transfer with the facilitator as fee payer (so users don't need SOL). Self-hosted facilitator runs in-process by default; Coinbase CDP facilitator class also built and toggleable via env var.
 
@@ -106,7 +106,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | Var | Purpose |
 |---|---|
 | `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` / `LIVEKIT_URL` | LiveKit Cloud project credentials |
-| `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, fr for French mode) |
+| `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, es for Spanish mode) |
 | `ELEVEN_API_KEY` | Text-to-speech |
 | `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` | ElevenLabs voice clones for each language |
 | `OPENROUTER_API_KEY` | LLM (`z-ai/glm-5.3` by default; override with `LLM_MODEL`) |
@@ -188,8 +188,8 @@ The agent doesn't need a public URL — it connects out to LiveKit Cloud as a wo
 Single source of truth for persona is [`agent/voice_agent/persona_config.py`](agent/voice_agent/persona_config.py):
 
 - `PERSONA_NAME` — who the agent claims to be
-- `ENGLISH_PERSONA_INTRO` / `FRENCH_PERSONA_INTRO` — opening directives (including the language constraint)
-- `ENGLISH_GREETINGS` / `FRENCH_GREETINGS` — randomly selected at session start
+- `ENGLISH_PERSONA_INTRO` / `SPANISH_PERSONA_INTRO` — opening directives (including the language constraint)
+- `ENGLISH_GREETINGS` / `SPANISH_GREETINGS` — randomly selected at session start
 - `_WARM_TONE_GUIDELINES` — shared persona behaviour across both languages
 - `STT_KEYWORDS` — Deepgram keyterm boosting (English-only by Deepgram limitation)
 

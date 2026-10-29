@@ -37,7 +37,7 @@ _REQUEST_TIMEOUT = 10.0
 _PRIME_QUERIES = {
     "core": "Solène Daviaud's core philosophy on building, accessibility, and Web3 + AI education",
     "english": "Solène Daviaud's approach to mentoring new builders, hackathons, and Dev3pack programs",
-    "french": "L'approche de Solène Daviaud pour mentor les nouveaux builders, les hackathons, et les programmes Dev3pack",
+    "spanish": "El enfoque de Solène Daviaud para acompañar a nuevos builders, los hackathons y los programas de Dev3pack",
 }
 
 

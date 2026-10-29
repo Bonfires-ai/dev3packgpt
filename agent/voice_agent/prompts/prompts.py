@@ -8,13 +8,13 @@ guidelines).  Edit ``persona_config.py`` to swap in a different persona.
 from voice_agent.persona_config import (
     PERSONA_NAME,
     ENGLISH_TONE_GUIDELINES,
-    FRENCH_TONE_GUIDELINES,
+    SPANISH_TONE_GUIDELINES,
     ENGLISH_PERSONA_INTRO,
-    FRENCH_PERSONA_INTRO,
+    SPANISH_PERSONA_INTRO,
     ENGLISH_GOAL,
-    FRENCH_GOAL,
+    SPANISH_GOAL,
     ENGLISH_GREETINGS,
-    FRENCH_GREETINGS,
+    SPANISH_GREETINGS,
 )
 
 # ---------------------------------------------------------------------------
@@ -167,10 +167,10 @@ _MOOD_CONFIGS = {
         "tone_guidelines": ENGLISH_TONE_GUIDELINES,
         "extra_constraints": _WARM_EXTRA,
     },
-    "french": {
-        "persona_intro": FRENCH_PERSONA_INTRO,
-        "goal": FRENCH_GOAL,
-        "tone_guidelines": FRENCH_TONE_GUIDELINES,
+    "spanish": {
+        "persona_intro": SPANISH_PERSONA_INTRO,
+        "goal": SPANISH_GOAL,
+        "tone_guidelines": SPANISH_TONE_GUIDELINES,
         "extra_constraints": _WARM_EXTRA,
     },
 }
@@ -191,7 +191,7 @@ def build_mood_prompt(mood: str, primed_context: str = "") -> str:
 # ---------------------------------------------------------------------------
 
 english_greetings = ENGLISH_GREETINGS
-french_greetings = FRENCH_GREETINGS
+spanish_greetings = SPANISH_GREETINGS
 
 english_initial_prompt = "Warmly, but very briefly greet the student and ask what they'd like to learn or what question they have. Short and welcoming."
-french_initial_prompt = "Chaleureusement, mais très brièvement, accueille l'étudiant et demande-lui ce qu'il aimerait apprendre ou quelle question il a. Court et accueillant."
+spanish_initial_prompt = "Con calidez, pero muy brevemente, saluda al estudiante y pregúntale qué le gustaría aprender o qué pregunta tiene. Corto y acogedor."
