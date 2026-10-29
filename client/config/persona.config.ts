@@ -47,7 +47,11 @@ export const personaConfig = {
       greeting: "Hey, welcome! I'm here to help with your questions. What would you like to understand better?",
       endCard: {
         title: 'Session complete',
-        body: 'Thanks for learning with me today. Keep the momentum going: try one thing we talked about, and join a Dev3pack bootcamp or hackathon hub to keep learning with the community.',
+        motif: 'Thanks for learning with me',
+        shareLabel: 'Share on X',
+        shareText:
+          'Just wrapped a study session with Solène, my teaching assistant for the Dev3pack AI-Engineering Bootcamp. #Dev3pack',
+        body: 'Keep the momentum going: explore more about the topics we talked about, and feel free to come back anytime if you have more questions.',
         linkLabel: 'Explore Dev3pack',
         saveLabel: 'Save session',
         againLabel: 'Ask more questions',
@@ -83,7 +87,11 @@ export const personaConfig = {
       greeting: "Bienvenue ! Je suis là pour répondre à tes questions. Qu'est-ce que tu aimerais mieux comprendre ?",
       endCard: {
         title: 'Session terminée',
-        body: "Merci d'avoir appris avec moi aujourd'hui. Garde l'élan : essaie une chose dont on a parlé, et rejoins un bootcamp ou un hub hackathon Dev3pack pour continuer à apprendre avec la communauté.",
+        motif: "Merci d'avoir appris avec moi",
+        shareLabel: 'Partager sur X',
+        shareText:
+          "Je viens de finir une session d'étude avec Solène, mon assistante pédagogique pour le Dev3pack AI-Engineering Bootcamp. #Dev3pack",
+        body: "Garde l'élan : approfondis les sujets dont on a parlé, et n'hésite pas à revenir quand tu veux si tu as d'autres questions.",
         linkLabel: 'Découvrir Dev3pack',
         saveLabel: 'Enregistrer la session',
         againLabel: "Poser d'autres questions",

@@ -47,10 +47,16 @@ export default function TranscriptionView({
   mood,
   combinedTranscriptions,
   showThinking = true,
+  header,
+  footer,
 }: {
   mood: AgentMoodI;
   combinedTranscriptions: Transcription[];
   showThinking?: boolean;
+  // Rendered above the messages, inside the scroll area.
+  header?: React.ReactNode;
+  // Rendered after the messages, inside the scroll area.
+  footer?: React.ReactNode;
 }) {
   const { state } = useVoiceAssistant();
 
@@ -94,24 +100,28 @@ export default function TranscriptionView({
 
   return (
     <div
-      className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden py-8 md:w-[700px] w-full pb-32 px-4"
+      className="h-full w-full overflow-y-auto overflow-x-hidden"
       onWheel={preventAutoScrollOnHumanScroll}
       onTouchStart={preventAutoScrollOnHumanScroll}
     >
-      {mergedTranscriptions.map(segment => (
-        <ChatBubble
-          key={segment.id}
-          id={segment.id}
-          text={sanitizeText(segment.text)}
-          role={segment.role}
-          mood={mood}
-          isLast={
-            (!isThinking && segment.id === lastAssistantTranscription?.id) || segment.id === lastUserTranscription?.id
-          }
-        />
-      ))}
+      {header}
+      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-3 px-4 py-6">
+        {mergedTranscriptions.map(segment => (
+          <ChatBubble
+            key={segment.id}
+            id={segment.id}
+            text={sanitizeText(segment.text)}
+            role={segment.role}
+            mood={mood}
+            isLast={
+              (!isThinking && segment.id === lastAssistantTranscription?.id) || segment.id === lastUserTranscription?.id
+            }
+          />
+        ))}
 
-      {isThinking && <ChatBubble id={'agent-thinking'} role={'assistant'} mood={mood} thinking isLast />}
+        {isThinking && <ChatBubble id={'agent-thinking'} role={'assistant'} mood={mood} thinking isLast />}
+        {footer}
+      </div>
     </div>
   );
 }
@@ -136,8 +146,8 @@ const ChatBubble = ({
       id={id}
       className={clsx(
         role === 'assistant'
-          ? `assistant-bubble rounded-2xl px-6 py-4 self-start md:max-w-[70%] max-w-[90%] shadow-md font-medium md:font-normal text-sm md:text-lg bg-[#A15EED] text-white ${isLast ? 'rounded-tl-none' : ''}`
-          : `user-bubble bg-white text-[#273339] border border-[#E4EAEB] rounded-2xl px-6 py-4 self-end md:max-w-[70%] font-medium md:font-normal max-w-[90%] shadow-md text-sm md:text-lg ${isLast ? 'rounded-br-none' : ''}`
+          ? `assistant-bubble rounded-2xl px-5 py-3 self-start max-w-[85%] md:max-w-[75%] shadow-sm text-[15px] md:text-base leading-relaxed bg-[#A15EED] text-white ${isLast ? 'rounded-tl-md' : ''}`
+          : `user-bubble bg-white text-[#171D21] border border-[#E4EAEB] rounded-2xl px-5 py-3 self-end max-w-[85%] md:max-w-[75%] shadow-sm text-[15px] md:text-base leading-relaxed ${isLast ? 'rounded-br-md' : ''}`
       )}
       style={{ wordBreak: 'break-word', whiteSpace: role === 'user' ? 'pre-line' : undefined }}
     >
