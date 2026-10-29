@@ -103,17 +103,28 @@ export function VoiceAssistant({
     await room.localParticipant.sendText(String(next), { topic: 'agent_audio_muted' });
   };
 
+  // Downloads the conversation as Markdown: a title and details, then one
+  // section per message. Solène's replies are kept as the Markdown she wrote.
   const handleSaveSession = () => {
+    const card = moodConfig.endCard;
     const started = combinedTranscriptions[0]?.firstReceivedTime ?? Date.now();
-    const lines = mergeConsecutiveSegments(combinedTranscriptions).map(
-      segment => `${segment.role === 'assistant' ? personaConfig.appName : 'You'}: ${sanitizeText(segment.text)}`
-    );
-    const header = `Session with ${personaConfig.appName} (${moodConfig.label}) — ${new Date(started).toLocaleString()}`;
-    const blob = new Blob([`${header}\n\n${lines.join('\n\n')}\n`], { type: 'text/plain;charset=utf-8' });
+    const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const messages = mergeConsecutiveSegments(combinedTranscriptions).map(segment => {
+      const speaker = segment.role === 'assistant' ? personaConfig.appName : card.transcriptYou;
+      return `### ${speaker} · ${time(segment.firstReceivedTime)}\n\n${sanitizeText(segment.text).trim()}`;
+    });
+    const markdown = [
+      `# ${card.transcriptTitle}`,
+      `**${card.transcriptLanguage}:** ${moodConfig.label}  \n**${card.transcriptDate}:** ${new Date(started).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' })}`,
+      '---',
+      ...messages,
+    ].join('\n\n');
+
+    const blob = new Blob([`${markdown}\n`], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `solene-session-${new Date(started).toISOString().slice(0, 16).replace(/[:T]/g, '-')}.txt`;
+    link.download = `solene-session-${new Date(started).toISOString().slice(0, 16).replace(/[:T]/g, '-')}.md`;
     link.click();
     URL.revokeObjectURL(url);
   };

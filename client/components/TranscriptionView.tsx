@@ -164,25 +164,51 @@ const ChatBubble = ({
   );
 };
 
-// Styles for markdown inside the purple assistant bubble. Links open in a new
-// tab, since leaving the page would drop the live session.
+// Markdown inside the purple assistant bubble, with an explicit component map so
+// every element is styled for white-on-purple. Links open in a new tab, since
+// leaving the page would drop the live session.
 const markdownComponents: Components = {
-  p: ({ node, ...props }) => <p className="[&:not(:first-child)]:mt-3" {...props} />,
+  p: ({ node, ...props }) => <p className="my-2 first:mt-0 last:mb-0" {...props} />,
+  ul: ({ node, ...props }) => <ul className="my-2 list-disc space-y-1 pl-5" {...props} />,
+  ol: ({ node, ...props }) => <ol className="my-2 list-decimal space-y-1 pl-5" {...props} />,
+  li: ({ node, ...props }) => <li className="leading-normal" {...props} />,
+  h1: ({ node, ...props }) => <h1 className="mt-4 mb-2 text-xl font-semibold first:mt-0" {...props} />,
+  h2: ({ node, ...props }) => <h2 className="mt-4 mb-2 text-lg font-semibold first:mt-0" {...props} />,
+  h3: ({ node, ...props }) => <h3 className="mt-3 mb-1 text-base font-semibold first:mt-0" {...props} />,
   a: ({ node, ...props }) => (
     <a
       {...props}
       target="_blank"
       rel="noopener noreferrer"
-      className="underline underline-offset-2 decoration-white/60 hover:decoration-white break-all"
+      className="underline underline-offset-2 decoration-white/60 hover:decoration-white break-words"
     />
   ),
-  ul: ({ node, ...props }) => <ul className="mt-2 list-disc pl-5 space-y-1" {...props} />,
-  ol: ({ node, ...props }) => <ol className="mt-2 list-decimal pl-5 space-y-1" {...props} />,
   strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
-  h1: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
-  h2: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
-  h3: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
-  code: ({ node, ...props }) => <code className="rounded bg-white/15 px-1 py-0.5 font-mono text-[0.9em]" {...props} />,
-  pre: ({ node, ...props }) => <pre className="mt-2 overflow-x-auto rounded-lg bg-black/20 p-3 text-sm" {...props} />,
-  blockquote: ({ node, ...props }) => <blockquote className="mt-2 border-l-2 border-white/50 pl-3" {...props} />,
+  hr: () => <hr className="my-4 border-white/30" />,
+  blockquote: ({ node, ...props }) => <blockquote className="my-2 border-l-2 border-white/50 pl-4 italic" {...props} />,
+  // Fenced code arrives wrapped in <pre>, which carries the block styling; only
+  // inline code needs its own chip.
+  code: ({ node, className, ...props }) =>
+    className?.includes('language-') ? (
+      <code className={className} {...props} />
+    ) : (
+      <code className="rounded bg-white/15 px-1.5 py-0.5 font-mono text-[0.9em]" {...props} />
+    ),
+  pre: ({ node, ...props }) => (
+    <pre
+      className="my-2 overflow-x-auto rounded-2xl bg-black/20 px-4 py-3 font-mono text-[13px] leading-normal"
+      {...props}
+    />
+  ),
+  table: ({ node, ...props }) => (
+    <div className="my-2 overflow-x-auto">
+      <table className="w-full border-collapse text-sm" {...props} />
+    </div>
+  ),
+  th: ({ node, ...props }) => <th className="border-b border-white/30 px-3 py-2 text-left font-semibold" {...props} />,
+  td: ({ node, ...props }) => <td className="border-b border-white/20 px-3 py-2 align-top" {...props} />,
+  img: ({ node, src, alt }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src ?? ''} alt={alt ?? ''} className="my-2 block max-w-full rounded-2xl border border-white/30" />
+  ),
 };
