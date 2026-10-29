@@ -1,16 +1,7 @@
 import { createFacilitator } from '@/lib/facilitator';
 import { decodeXPaymentHeader } from '@/lib/x402/header';
-import {
-  NETWORK_SOLANA_DEVNET,
-  NETWORK_SOLANA_MAINNET,
-  type PaymentRequirements,
-  type PaymentResource,
-  SCHEME_EXACT,
-  USDC_DECIMALS,
-  USDC_DEVNET_MINT,
-  USDC_MAINNET_MINT,
-  X402_VERSION,
-} from '@/lib/x402/spec';
+import { paymentRequirements } from '@/lib/x402/requirements';
+import { type PaymentResource, X402_VERSION } from '@/lib/x402/spec';
 import { SignJWT } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
@@ -31,21 +22,6 @@ async function mintSessionToken(jwtSecret: string) {
     .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
     .sign(secret);
   return { session_token: sessionToken, expires_in: SESSION_TTL_SECONDS };
-}
-
-function buildRequirements(feePayer: string): PaymentRequirements {
-  const isMainnet = (process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? 'devnet').toLowerCase() === 'mainnet';
-  const usdAmount = parseFloat(process.env.NEXT_PUBLIC_PAYMENT_DEFAULT_AMOUNT ?? '0.01');
-  const amountSmallestUnits = String(Math.round(usdAmount * 10 ** USDC_DECIMALS));
-  return {
-    scheme: SCHEME_EXACT,
-    network: isMainnet ? NETWORK_SOLANA_MAINNET : NETWORK_SOLANA_DEVNET,
-    amount: amountSmallestUnits,
-    asset: isMainnet ? USDC_MAINNET_MINT : USDC_DEVNET_MINT,
-    payTo: process.env.SOLANA_RECIPIENT_ADDRESS as string,
-    maxTimeoutSeconds: 60,
-    extra: { feePayer },
-  };
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +60,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const requirements = buildRequirements(feePayer);
+  const requirements = paymentRequirements(
+    feePayer,
+    parseFloat(process.env.NEXT_PUBLIC_PAYMENT_DEFAULT_AMOUNT ?? '0.01')
+  );
   const xPayment = req.headers.get('x-payment');
 
   if (!xPayment) {

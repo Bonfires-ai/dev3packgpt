@@ -56,8 +56,7 @@ fly secrets set \
   LIVEKIT_API_SECRET="..." \
   LIVEKIT_URL="wss://your-project.livekit.cloud" \
   DEEPGRAM_API_KEY="..." \
-  ELEVEN_API_KEY="..." \
-  OPENAI_API_KEY="..."
+  ELEVEN_API_KEY="..."
 
 # Optional
 fly secrets set \

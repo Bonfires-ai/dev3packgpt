@@ -53,7 +53,6 @@ railway variable set LIVEKIT_API_SECRET="..."
 railway variable set LIVEKIT_URL="wss://your-project.livekit.cloud"
 railway variable set DEEPGRAM_API_KEY="..."
 railway variable set ELEVEN_API_KEY="..."
-railway variable set OPENAI_API_KEY="..."
 
 # Optional
 railway variable set ELEVEN_VOICE_ID="..."

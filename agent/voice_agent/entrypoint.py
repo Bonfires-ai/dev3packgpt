@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import time
@@ -83,6 +84,12 @@ def handle_user_end_conversation(
 async def async_handle_agent_audio_muted(reader, session: AgentSession):
     muted = (await reader.read_all()).strip() == "true"
     logger.info("Agent audio %s by user", "muted" if muted else "unmuted")
+    # Toggling audio output mid-reply rotates the transcript synchronizer and
+    # drops the rest of that reply's text, so let the current reply finish
+    # first. The client already silences playback locally the moment it mutes.
+    speech = session.current_speech
+    if speech is not None:
+        await speech.wait_for_playout()
     # With audio output off, replies skip TTS entirely and go out as text
     # transcriptions only, so a muted session makes no TTS calls.
     session.output.set_audio_enabled(not muted)
@@ -126,6 +133,19 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     organised for readability. The LiveKit lifecycle (connect → create session →
     event-loop) remains unchanged so behaviour stays identical.
     """
+
+    # ---------------------------------------------------------------------
+    # The member's OpenRouter key comes with the dispatch (see the client's
+    # /api/connection-details). The agent has no key of its own, so without
+    # one it does not join.
+    # ---------------------------------------------------------------------
+    try:
+        openrouter_api_key = json.loads(ctx.job.metadata or "{}").get("openrouter_api_key")
+    except (json.JSONDecodeError, AttributeError):
+        openrouter_api_key = None
+    if not openrouter_api_key:
+        logger.error("No OpenRouter key in the dispatch for room %s — not joining", ctx.room.name)
+        return
 
     # ---------------------------------------------------------------------
     # Connect to the room and derive mood from room name prefix
@@ -238,7 +258,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         stt_kwargs["keyterm"] = stt_words
 
     # ElevenLabs carries the cloned Solène voices. Without an ElevenLabs key,
-    # fall back to OpenRouter TTS (stock voice) on the same key as the LLM.
+    # fall back to OpenRouter TTS (stock voice) on the member's key, as the LLM.
     if os.environ.get("ELEVEN_API_KEY"):
         session_tts = elevenlabs.TTS(
             model="eleven_flash_v2_5",
@@ -258,7 +278,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         logger.warning("ELEVEN_API_KEY not set — falling back to OpenRouter TTS")
         session_tts = openai.TTS(
             base_url="https://openrouter.ai/api/v1",
-            api_key=os.environ["OPENROUTER_API_KEY"],
+            api_key=openrouter_api_key,
             model=os.environ.get("OPENROUTER_TTS_MODEL", "x-ai/grok-voice-tts-1.0"),
             voice=os.environ.get("OPENROUTER_TTS_VOICE", "eve"),
             response_format="pcm",
@@ -283,8 +303,8 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
         stt=deepgram.STT(**stt_kwargs),
         llm=openai.LLM(
             model=os.environ.get("LLM_MODEL", "z-ai/glm-5.3-flash"),
-            base_url=os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
-            api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
+            base_url="https://openrouter.ai/api/v1",
+            api_key=openrouter_api_key,
         ),
         tts=session_tts,
         # Defaults plus strip_urls: cited links stay in the text, out of the voice.
@@ -479,6 +499,9 @@ def run_from_cli() -> None:
         WorkerOptions(
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
+            # Explicit dispatch only: the client dispatches the agent with the
+            # member's OpenRouter key, so it never joins a room on its own.
+            agent_name=os.environ.get("LIVEKIT_AGENT_NAME", "solene"),
             num_idle_processes=0,
             load_threshold=0.6,
             job_memory_limit_mb=800,

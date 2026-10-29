@@ -1,13 +1,16 @@
 import { requireMember } from '@/lib/auth';
+import { ensureWalletKey } from '@/lib/wallet';
 import crypto from 'crypto';
 import { jwtVerify } from 'jose';
-import { AccessToken, AccessTokenOptions, VideoGrant } from 'livekit-server-sdk';
+import { AccessToken, AccessTokenOptions, AgentDispatchClient, VideoGrant } from 'livekit-server-sdk';
 import { NextResponse } from 'next/server';
 
 // NOTE: you are expected to define the following environment variables in `.env.local`:
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
+// The voice agent registers under this name and joins only rooms it is dispatched to.
+const AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? 'solene';
 
 // Voice session JWT gate — if set, requires a valid session token from Delve
 const VOICE_SESSION_JWT_SECRET = process.env.VOICE_SESSION_JWT_SECRET;
@@ -99,10 +102,25 @@ export async function GET(request: Request) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
     }
 
+    // The agent spends from the member's own OpenRouter key and has none of its own.
+    let openrouterKey: string;
+    try {
+      openrouterKey = await ensureWalletKey(member.email);
+    } catch (err) {
+      console.error('wallet provisioning failed', err);
+      return NextResponse.json({ error: 'Your OpenRouter wallet is not ready yet.' }, { status: 503 });
+    }
+
     // Generate participant token
     const participantIdentity = `voice_assistant_user_${crypto.randomUUID().replace(/-/g, '')}`;
     const roomName = `${mood}_room_${crypto.randomUUID().replace(/-/g, '')}`;
     const participantToken = await createParticipantToken({ identity: participantIdentity }, roomName);
+
+    // Dispatched from here, not through the participant token or room metadata, since
+    // the browser can read both; only the agent's job sees the dispatch metadata.
+    await new AgentDispatchClient(LIVEKIT_URL, API_KEY, API_SECRET).createDispatch(roomName, AGENT_NAME, {
+      metadata: JSON.stringify({ openrouter_api_key: openrouterKey }),
+    });
 
     // Return connection details
     const data: ConnectionDetails = {

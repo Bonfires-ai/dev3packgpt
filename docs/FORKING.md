@@ -48,7 +48,6 @@ LIVEKIT_URL=wss://<your-project>.livekit.cloud
 DEEPGRAM_API_KEY=
 ELEVEN_API_KEY=
 ELEVEN_VOICE_ID=          # Optional – falls back to default
-OPENAI_API_KEY=
 
 # Optional – Devfolio analytics (leave blank to skip)
 DATALAYER_BASE_URL=

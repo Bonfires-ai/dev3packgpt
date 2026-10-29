@@ -62,4 +62,10 @@ export const homeAgents: HomeAgent[] = [
   },
 ];
 
+// The start button on phones: one word by kind, in place of startLabel.
+export const shortStartLabel: Record<HomeAgent['kind'], ByMood<string>> = {
+  voice: { [AgentMoodEnum.ENGLISH]: 'Talk', [AgentMoodEnum.SPANISH]: 'Hablar' },
+  text: { [AgentMoodEnum.ENGLISH]: 'Chat', [AgentMoodEnum.SPANISH]: 'Chatear' },
+};
+
 export const findHomeAgent = (slug: string) => homeAgents.find(agent => agent.slug === slug);

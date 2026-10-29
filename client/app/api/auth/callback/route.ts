@@ -1,4 +1,5 @@
 import { FLOW_COOKIE_NAME, completeLogin, publicOrigin, sessionCookie, signSession } from '@/lib/auth';
+import { ensureWalletKey } from '@/lib/wallet';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -13,6 +14,12 @@ export async function GET(request: Request) {
     console.error('sign-in failed', err);
     return { ok: false as const, error: 'failed', returnTo: '/' };
   });
+
+  // A member's OpenRouter key is made on joining. Sign-in does not wait on a failure:
+  // /api/wallet and /api/connection-details try again.
+  if (result.ok) {
+    await ensureWalletKey(result.profile.email).catch(err => console.error('wallet provisioning failed', err));
+  }
 
   const target = new URL(result.returnTo, origin);
   if (!result.ok) target.searchParams.set('auth_error', result.error);

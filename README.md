@@ -61,7 +61,7 @@ LiveKit room
 ```sh
 cd agent
 cp .env.example .env
-# Fill in: LIVEKIT_*, DEEPGRAM_API_KEY, ELEVEN_API_KEY, OPENROUTER_API_KEY,
+# Fill in: LIVEKIT_*, DEEPGRAM_API_KEY, ELEVEN_API_KEY,
 #          ELEVEN_VOICE_ID_EN, ELEVEN_VOICE_ID_FR
 make install
 make download-files
@@ -109,7 +109,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, es for Spanish mode) |
 | `ELEVEN_API_KEY` | Text-to-speech |
 | `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` | ElevenLabs voice clones for each language |
-| `OPENROUTER_API_KEY` | LLM (`z-ai/glm-5.3` by default; override with `LLM_MODEL`) |
+| `LIVEKIT_AGENT_NAME` | Optional, default `solene`. The agent only joins rooms the client dispatches it to, with the signed-in member's OpenRouter key; it has no key of its own. LLM is `z-ai/glm-5.3` by default (override with `LLM_MODEL`) |
 
 **Client (`client/.env.local`)**
 
@@ -123,6 +123,11 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `SOLANA_RECIPIENT_ADDRESS` | Where USDC payments land (your Solana wallet) |
 | `FACILITATOR_KEYPAIR_SECRET` | Base58 secret key for the facilitator (pays Solana tx fees) |
 | `VOICE_SESSION_JWT_SECRET` | HMAC secret for minting single-use session tokens |
+| `DATABASE_URL` | Supabase Postgres connection string (pooler); run `client/db/wallet.sql` once |
+| `OPENROUTER_PROVISIONING_KEY` | OpenRouter provisioning key: makes each fleet member's key on their first sign-in |
+| `OPENROUTER_KEY_CREDIT_USD` | Credit limit on each member's key (default `0.5`) |
+| `WALLET_ENCRYPTION_KEY` | Encrypts the stored keys (AES-256-GCM); `openssl rand -hex 32` |
+| `LIVEKIT_AGENT_NAME` | Optional, default `solene`; must match the agent's |
 | `NEXT_PUBLIC_PAYMENT_DEFAULT_AMOUNT` | Session price in USD (default `0.20`) |
 | `NEXT_PUBLIC_DISABLE_X402` | `true` to disable wallet + payment entirely (free sessions; useful for demos / workshops). Default `false`. |
 

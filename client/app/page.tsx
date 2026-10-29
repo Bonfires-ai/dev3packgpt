@@ -2,17 +2,23 @@
 
 import { AgentCarousel } from '@/components/AgentCarousel';
 import { Button } from '@/components/Button';
+import { BuyCreditsButton } from '@/components/BuyCreditsButton';
+import { BuyCreditsDialog } from '@/components/BuyCreditsDialog';
 import { ChatRoom } from '@/components/ChatRoom';
 import { LanguageSelect } from '@/components/LanguageSelect';
 import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
-import { HomeAgent, VOICE_AGENT, homeAgents } from '@/config/agents.config';
+import { WalletKeyDialog } from '@/components/WalletKeyDialog';
+import { LogoutIcon } from '@/components/icons/LogoutIcon';
+import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
 import { useAuth, userFirstName, userInitials } from '@/hooks/useAuth';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { useTextSession } from '@/hooks/useTextSession';
+import { useWallet } from '@/hooks/useWallet';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
@@ -29,6 +35,7 @@ export default function HomePage() {
   const { room, status, error, start, reset } = useTalkSession();
   const text = useTextSession();
   const auth = useAuth();
+  const wallet = useWallet(auth.signedIn);
   const [agent, setAgent] = useState(VOICE_AGENT);
   // Signed in, the text agent becomes the user's own: "Ana's", with their photo or else their initials.
   const agents = useMemo<HomeAgent[]>(() => {
@@ -52,6 +59,7 @@ export default function HomePage() {
   const moodConfig = personaConfig.moods[mood];
   const [micDialog, setMicDialog] = useState<MicDialogState | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
 
   // A failed sign-in comes back here; reopen the dialog to say why.
   useEffect(() => {
@@ -130,14 +138,30 @@ export default function HomePage() {
         }}
       />
 
-      <header className="z-20 w-full flex justify-end items-center gap-3 px-4 md:px-6 pt-4">
+      <header className="z-20 w-full flex items-center gap-2 md:gap-3 px-4 md:px-6 pt-4">
+        {auth.signedIn && (
+          <BuyCreditsButton
+            credits={wallet.credit?.remaining != null ? toCredits(wallet.credit.remaining) : null}
+            onClick={() => setBuyCreditsOpen(true)}
+          />
+        )}
+        <div className="ml-auto" />
         {!auth.loading && (
           <button
             onClick={auth.signedIn ? auth.signOut : () => setSignInOpen(true)}
             title={auth.email ?? undefined}
-            className="h-7 px-3 border border-[#A15EED] text-[#A15EED] bg-white hover:bg-[#A15EED]/10 font-inter font-semibold text-xs uppercase tracking-[0.15em] transition-colors"
+            aria-label={auth.signedIn ? 'Sign out' : undefined}
+            className="inline-flex items-center h-7 px-2 md:px-3 whitespace-nowrap border border-[#A15EED] text-[#A15EED] bg-white hover:bg-[#A15EED]/10 font-inter font-semibold text-xs uppercase tracking-[0.08em] md:tracking-[0.15em] transition-colors"
           >
-            {auth.signedIn ? 'Sign out' : 'Sign in'}
+            {auth.signedIn ? (
+              <>
+                {/* Phones get the icon alone, so the header fits. */}
+                <LogoutIcon className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">Sign out</span>
+              </>
+            ) : (
+              'Sign in'
+            )}
           </button>
         )}
         {/* The widget is an inline iframe; without this its line box sits taller than the button beside it. */}
@@ -217,7 +241,14 @@ export default function HomePage() {
             className={clsx('inline-flex items-center justify-center gap-3', starting && 'cursor-wait opacity-90')}
           >
             {starting && <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-            {starting ? moodConfig.startingLabel : homeAgent.startLabel[mood]}
+            {starting ? (
+              moodConfig.startingLabel
+            ) : (
+              <>
+                <span className="sm:hidden">{shortStartLabel[homeAgent.kind][mood]}</span>
+                <span className="hidden sm:inline">{homeAgent.startLabel[mood]}</span>
+              </>
+            )}
           </Button>
           <LanguageSelect value={mood} onChange={handleLanguageChange} disabled={starting} />
           {/* Out of the flow, so an error never pushes the page into scrolling. */}
@@ -275,6 +306,10 @@ export default function HomePage() {
           }}
         />
       )}
+
+      {wallet.key && <WalletKeyDialog openrouterKey={wallet.key} credit={wallet.credit} onClose={wallet.dismissKey} />}
+
+      {buyCreditsOpen && <BuyCreditsDialog onPaid={wallet.setCredit} onClose={() => setBuyCreditsOpen(false)} />}
 
       {micDialog && (
         <MicPermissionDialog
