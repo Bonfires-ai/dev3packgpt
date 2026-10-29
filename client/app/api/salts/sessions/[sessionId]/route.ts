@@ -1,5 +1,5 @@
 import { requireMember } from '@/lib/auth';
-import { ownsSession, saltsAgentAuth, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
+import { memberAgentAuth, ownsSession, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -9,8 +9,9 @@ export async function DELETE(request: Request, { params }: { params: { sessionId
   const member = await requireMember();
   if (member instanceof NextResponse) return member;
 
-  const auth = saltsAgentAuth(new URL(request.url).searchParams.get('agent'));
-  if (!auth || !ownsSession(auth, params.sessionId)) return unknownAgent();
+  const auth = await memberAgentAuth(member, new URL(request.url).searchParams.get('agent'));
+  if (auth instanceof NextResponse) return auth;
+  if (!ownsSession(auth, params.sessionId)) return unknownAgent();
 
   const res = await saltsFetch(auth, `/api/sessions/${encodeURIComponent(params.sessionId)}`, { method: 'DELETE' });
   if (!res.ok && res.status !== 404) return upstreamError(res);

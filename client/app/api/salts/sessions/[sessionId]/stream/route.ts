@@ -1,5 +1,5 @@
 import { requireMember } from '@/lib/auth';
-import { ownsSession, saltsAgentAuth, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
+import { memberAgentAuth, ownsSession, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +11,9 @@ export async function POST(request: Request, { params }: { params: { sessionId: 
   if (member instanceof NextResponse) return member;
 
   const { agent, message } = await request.json().catch(() => ({}));
-  const auth = saltsAgentAuth(agent);
-  if (!auth || !ownsSession(auth, params.sessionId)) return unknownAgent();
+  const auth = await memberAgentAuth(member, agent);
+  if (auth instanceof NextResponse) return auth;
+  if (!ownsSession(auth, params.sessionId)) return unknownAgent();
   if (typeof message !== 'string' || !message.trim()) {
     return NextResponse.json({ error: 'Empty message' }, { status: 400 });
   }

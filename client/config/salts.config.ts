@@ -1,6 +1,6 @@
 // Text-only agents hosted on Salts (api.salts.dev), offered next to the LiveKit
-// voice agent. Safe for the browser: each agent's API key stays on the server,
-// in SALTS_AGENT_KEY_<SLUG> (e.g. SALTS_AGENT_KEY_GENERAL_ASSISTANT).
+// voice agent. Safe for the browser. Each entry is a chat with the signed-in
+// member's own agent in the Salts fleet (lib/salts.ts), not a shared agent.
 export interface SaltsAgent {
   slug: string;
   name: string;

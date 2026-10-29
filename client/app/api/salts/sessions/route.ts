@@ -1,5 +1,5 @@
 import { requireMember } from '@/lib/auth';
-import { saltsAgentAuth, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
+import { memberAgentAuth, saltsFetch, upstreamError } from '@/lib/salts';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +11,8 @@ export async function POST(request: Request) {
   if (member instanceof NextResponse) return member;
 
   const { agent } = await request.json().catch(() => ({}));
-  const auth = saltsAgentAuth(agent);
-  if (!auth) return unknownAgent();
+  const auth = await memberAgentAuth(member, agent);
+  if (auth instanceof NextResponse) return auth;
 
   const res = await saltsFetch(auth, `/api/agents/${auth.agentId}/sessions`, {
     method: 'POST',

@@ -1,4 +1,5 @@
 import { FLOW_COOKIE_NAME, completeLogin, publicOrigin, sessionCookie, signSession } from '@/lib/auth';
+import { saveSaltsTokens } from '@/lib/salts-tokens';
 import { ensureWalletKey } from '@/lib/wallet';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -16,9 +17,13 @@ export async function GET(request: Request) {
   });
 
   // A member's OpenRouter key is made on joining. Sign-in does not wait on a failure:
-  // /api/wallet and /api/connection-details try again.
+  // /api/wallet and /api/connection-details try again. Without saved Salts tokens the
+  // text chat asks the member to sign in again; the rest still works.
   if (result.ok) {
     await ensureWalletKey(result.profile.email).catch(err => console.error('wallet provisioning failed', err));
+    await saveSaltsTokens(result.profile.email, result.tokens).catch(err =>
+      console.error('saving salts tokens failed', err)
+    );
   }
 
   const target = new URL(result.returnTo, origin);

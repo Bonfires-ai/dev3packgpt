@@ -4,41 +4,11 @@
 //
 // Keys are stored encrypted (AES-256-GCM, WALLET_ENCRYPTION_KEY) in Supabase
 // Postgres; see db/wallet.sql for the table.
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import postgres from 'postgres';
+import { db, decrypt, encrypt } from '@/lib/db';
 
 const OPENROUTER_API = 'https://openrouter.ai/api/v1';
 const PROVISIONING_KEY = process.env.OPENROUTER_PROVISIONING_KEY;
 const CREDIT_USD = Number(process.env.OPENROUTER_KEY_CREDIT_USD ?? '0.5');
-
-// One client per server instance. Supabase's pooler (transaction mode) has no
-// prepared statements.
-let client: postgres.Sql | undefined;
-function db() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined');
-  client ??= postgres(process.env.DATABASE_URL, { prepare: false, max: 5 });
-  return client;
-}
-
-function encryptionKey() {
-  const key = Buffer.from(process.env.WALLET_ENCRYPTION_KEY ?? '', 'hex');
-  if (key.length !== 32) throw new Error('WALLET_ENCRYPTION_KEY must be 64 hex characters');
-  return key;
-}
-
-function encrypt(plain: string): string {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', encryptionKey(), iv);
-  const data = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
-  return [iv, cipher.getAuthTag(), data].map(b => b.toString('base64')).join('.');
-}
-
-function decrypt(sealed: string): string {
-  const [iv, tag, data] = sealed.split('.').map(part => Buffer.from(part, 'base64'));
-  const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
-}
 
 /** Make a key held to `limit` dollars. `name` is what OpenRouter's dashboard lists it by. */
 async function createKey(name: string, limit: number): Promise<{ secret: string; hash: string }> {

@@ -6,6 +6,10 @@
 // /api/auth/callback trades the code for an access token, reads the email from
 // userinfo, checks the fleet and sets a signed session cookie. The chat APIs
 // call requireMember() before doing anything.
+//
+// The access token is asked for with resource=SALTS_OAUTH_RESOURCE (api.salts.dev), so
+// Salts accepts it on the member's own agent sessions (see lib/salts.ts); it is kept,
+// with its refresh token, by lib/salts-tokens.ts.
 import { SignJWT, decodeJwt, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -16,6 +20,8 @@ const SALTS_API_URL = process.env.SALTS_API_URL ?? 'https://api.salts.dev';
 const FLEET_ID = process.env.SALTS_FLEET_ID;
 const FLEET_KEY = process.env.SALTS_FLEET_KEY;
 const SESSION_SECRET = process.env.AUTH_SESSION_SECRET;
+/** The audience Salts checks on access tokens: its own API origin. */
+export const SALTS_RESOURCE = (process.env.SALTS_OAUTH_RESOURCE ?? SALTS_API_URL).replace(/\/+$/, '');
 
 const SESSION_COOKIE = 'solene_session';
 const FLOW_COOKIE = 'solene_oauth';
@@ -24,11 +30,15 @@ const FLOW_TTL = 10 * 60; // seconds
 export const CALLBACK_PATH = '/api/auth/callback';
 export const CLIENT_METADATA_PATH = '/oauth/client-metadata.json';
 
-/** How long a fleet verdict is reused; also the delay before a fleet removal takes effect. */
+/** How long a fleet lookup is reused; also the delay before a fleet removal takes effect. */
 const VERDICT_TTL = 60_000;
-const verdicts = new Map<string, { member: boolean; until: number }>();
+const verdicts = new Map<string, { agents: FleetAgent[]; until: number }>();
 
 export type Member = { email: string };
+/** A Salts fleet agent the member is on, as the fleet lookup lists it. */
+export type FleetAgent = { id: string; name: string };
+/** What the token endpoint answered, for lib/salts-tokens.ts to keep. */
+export type OAuthTokens = { clientId: string; accessToken: string; refreshToken?: string; expiresIn?: number };
 /** What the session cookie carries about the signed-in user. */
 export type Profile = { email: string; name?: string; picture?: string };
 
@@ -66,7 +76,9 @@ export async function beginLogin(origin: string, returnTo: string) {
     response_type: 'code',
     client_id: clientId(origin),
     redirect_uri: `${origin}${CALLBACK_PATH}`,
-    scope: 'openid email profile',
+    // offline_access: a refresh token, so the Salts chat outlives the access token.
+    scope: 'openid email profile offline_access',
+    resource: SALTS_RESOURCE,
     state,
     code_challenge: challenge,
     code_challenge_method: 'S256',
@@ -80,7 +92,7 @@ export async function beginLogin(origin: string, returnTo: string) {
 }
 
 export type LoginResult =
-  | { ok: true; profile: Profile; returnTo: string }
+  | { ok: true; profile: Profile; tokens: OAuthTokens; returnTo: string }
   | { ok: false; error: string; returnTo: string };
 
 /** Finishes a login from the callback's query and the flow cookie. */
@@ -100,25 +112,19 @@ export async function completeLogin(
   const code = params.get('code');
   if (!code || params.get('state') !== flow.state) return { ok: false, error: 'expired', returnTo };
 
-  const tokenRes = await fetch(`${OAUTH_ISSUER}/oauth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: `${origin}${CALLBACK_PATH}`,
-      client_id: clientId(origin),
-      code_verifier: flow.verifier ?? '',
-      ...(process.env.CLERK_OAUTH_CLIENT_SECRET && { client_secret: process.env.CLERK_OAUTH_CLIENT_SECRET }),
-    }),
-    cache: 'no-store',
-    signal: AbortSignal.timeout(15_000),
+  const tokenRes = await tokenRequest({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: `${origin}${CALLBACK_PATH}`,
+    client_id: clientId(origin),
+    code_verifier: flow.verifier ?? '',
   });
   if (!tokenRes.ok) {
     console.error('oauth token exchange failed', tokenRes.status, await tokenRes.text().catch(() => ''));
     return { ok: false, error: 'failed', returnTo };
   }
-  const { access_token, id_token } = (await tokenRes.json()) as { access_token?: string; id_token?: string };
+  const { access_token, id_token, refresh_token, expires_in } = (await tokenRes.json()) as TokenResponse;
+  if (!access_token) return { ok: false, error: 'failed', returnTo };
 
   const infoRes = await fetch(`${OAUTH_ISSUER}/oauth/userinfo`, {
     headers: { Authorization: `Bearer ${access_token}` },
@@ -149,7 +155,39 @@ export async function completeLogin(
   const fullName = (c: Claims) => c.name?.trim() || [c.given_name, c.family_name].filter(Boolean).join(' ').trim();
   const name = fullName(info) || fullName(idClaims);
   const picture = uploadedPicture(info.picture) ?? uploadedPicture(idClaims.picture);
-  return { ok: true, profile: { email, ...(name && { name }), ...(picture && { picture }) }, returnTo };
+  return {
+    ok: true,
+    profile: { email, ...(name && { name }), ...(picture && { picture }) },
+    tokens: {
+      clientId: clientId(origin),
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      expiresIn: expires_in,
+    },
+    returnTo,
+  };
+}
+
+export type TokenResponse = {
+  access_token?: string;
+  id_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+};
+
+/** A call to Clerk's token endpoint, always for the Salts resource. */
+export function tokenRequest(params: Record<string, string>) {
+  return fetch(`${OAUTH_ISSUER}/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      ...params,
+      resource: SALTS_RESOURCE,
+      ...(process.env.CLERK_OAUTH_CLIENT_SECRET && { client_secret: process.env.CLERK_OAUTH_CLIENT_SECRET }),
+    }),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(15_000),
+  });
 }
 
 /**
@@ -207,10 +245,13 @@ export async function requireMember(): Promise<Member | NextResponse> {
   return NextResponse.json({ error: `${email} is not authorized to chat with the agents.` }, { status: 403 });
 }
 
-export async function inFleet(email: string): Promise<boolean> {
+export const inFleet = async (email: string) => (await fleetAgents(email)).length > 0;
+
+/** The fleet's agents the member is on, oldest first; none means not a member. */
+export async function fleetAgents(email: string): Promise<FleetAgent[]> {
   const now = Date.now();
   const hit = verdicts.get(email);
-  if (hit && hit.until > now) return hit.member;
+  if (hit && hit.until > now) return hit.agents;
 
   if (!FLEET_ID || !FLEET_KEY) throw new Error('SALTS_FLEET_ID and SALTS_FLEET_KEY are required for sign-in');
   const url = new URL(`${SALTS_API_URL}/api/fleets/${encodeURIComponent(FLEET_ID)}/agents`);
@@ -221,10 +262,10 @@ export async function inFleet(email: string): Promise<boolean> {
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) throw new Error(`fleet lookup ${res.status}`);
-  const body = (await res.json()) as { agents?: unknown[] };
-  const member = Array.isArray(body.agents) && body.agents.length > 0;
+  const body = (await res.json()) as { agents?: FleetAgent[] };
+  const agents = Array.isArray(body.agents) ? body.agents.map(({ id, name }) => ({ id, name })) : [];
 
   verdicts.forEach((v, k) => v.until <= now && verdicts.delete(k));
-  verdicts.set(email, { member, until: now + VERDICT_TTL });
-  return member;
+  verdicts.set(email, { agents, until: now + VERDICT_TTL });
+  return agents;
 }
