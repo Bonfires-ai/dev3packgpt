@@ -7,18 +7,20 @@ export interface Transcription {
   text: string;
   role: 'assistant' | 'user';
   firstReceivedTime: number;
+  // Shown by the client itself (the greeting, typed messages), not transcribed.
+  local?: boolean;
 }
 
 /**
  * Custom hook for combining agent and user transcriptions.
  *
  * This hook manages the combination of transcriptions from the voice assistant, the user's microphone,
- * and messages the user typed (which the agent does not echo back as transcriptions).
+ * and local messages: the greeting and what the user typed (which the agent does not echo back as transcriptions).
  * It provides a combined list of transcriptions sorted by the time they were first received.
  *
  * @returns {Transcription[]} Combined list of transcriptions
  */
-export default function useCombinedTranscriptions(typedMessages: Transcription[] = []) {
+export default function useCombinedTranscriptions(localMessages: Transcription[] = []) {
   const { agentTranscriptions, state } = useVoiceAssistant();
 
   const backupTranscriptions = useRef<Transcription[]>([]);
@@ -34,9 +36,9 @@ export default function useCombinedTranscriptions(typedMessages: Transcription[]
       ...userTranscriptions.map(val => {
         return { ...val, role: 'user' };
       }),
-      ...typedMessages,
+      ...localMessages,
     ].sort((a, b) => a.firstReceivedTime - b.firstReceivedTime);
-  }, [agentTranscriptions, userTranscriptions, typedMessages]);
+  }, [agentTranscriptions, userTranscriptions, localMessages]);
 
   useEffect(() => {
     if (state !== 'disconnected') {

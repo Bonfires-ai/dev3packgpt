@@ -3,122 +3,14 @@ import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import { useVoiceAssistant } from '@livekit/components-react';
 import clsx from 'clsx';
 import * as React from 'react';
-
-// const testTranscriptions = [
-//   {
-//     id: 'SG_c3b777e0b1b3',
-//     text: 'Alright, let’s cut to the chase. What are you building? Lay it out quickly. Why should I care?',
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746618974989,
-//     lastReceivedTime: 1746618980614,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618971339,
-//     role: 'user',
-//   },
-//   {
-//     id: 'SG_cd6a36b225c8',
-//     text: "If you've got",
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746618998349,
-//     lastReceivedTime: 1746618998376,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618971339,
-//     role: 'assistant',
-//   },
-//   {
-//     id: 'SG_831bdbc25fca',
-//     text: "I'm building a platform for",
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746618998683,
-//     lastReceivedTime: 1746619000231,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618967890,
-//     role: 'user',
-//   },
-//   {
-//     id: 'SG_5ee784f4cdfc',
-//     text: 'talent protocol.',
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746619002159,
-//     lastReceivedTime: 1746619003197,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618967890,
-//     role: 'user',
-//   },
-//   {
-//     id: 'SG_b03531e29a38',
-//     text: 'I need more from you on this. How are you addressing privacy concerns? What safeguards do you have in place to protect user data while still providing value through identity connections? Security is paramount—explain your strategy.',
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746619328407,
-//     lastReceivedTime: 1746619343277,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618971339,
-//     role: 'assistant',
-//   },
-//   {
-//     id: 'SG_323bc56e28d2',
-//     text: "Aha! This was fun, but I'm afraid that's all that we have for today. I can't wait to see your idea come to life during Onchain Summer! Stay based, and never stop building!!",
-//     startTime: 0,
-//     endTime: 0,
-//     final: true,
-//     language: '',
-//     firstReceivedTime: 1746619346668,
-//     lastReceivedTime: 1746619360719,
-//     receivedAtMediaTimestamp: 0,
-//     receivedAt: 1746618971339,
-//     role: 'assistant',
-//   },
-// ];
-
-// const streamSpeed = 50;
-
-// const useTestTranscriptions = () => {
-//   const [transcriptions, setTranscriptions] = React.useState<typeof testTranscriptions>([
-//     { ...testTranscriptions[0], text: '' },
-//   ]);
-
-//   React.useEffect(() => {
-//     // initial case
-//     if (transcriptions[0].text !== testTranscriptions[0].text) {
-//       console.log('stream');
-//       const updatedText = testTranscriptions[0].text.slice(0, transcriptions[0].text.length + 1);
-
-//       setTimeout(() => {
-//         setTranscriptions(prev => [{ ...testTranscriptions[0], text: updatedText }]);
-//       }, streamSpeed);
-//       // streamText();
-//     } else {
-//       // reset
-//       setTimeout(() => {
-//         setTranscriptions(prev => [{ ...testTranscriptions[0], text: '' }]);
-//       }, streamSpeed);
-//     }
-//   }, [transcriptions]);
-
-//   return transcriptions;
-// };
+import Markdown, { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const sanitizeText = (text: string) => {
-  // Strip markdown-ish chars only. Keep apostrophes — "we've" must stay "we've".
-  // Also patch crypto jargon Deepgram spells out (safety net even with
-  // server-side `replace` config, since smart_format misses some patterns).
+  // Patch crypto jargon Deepgram spells out (safety net even with server-side
+  // `replace` config, since smart_format misses some patterns). Markdown is
+  // left in place: assistant bubbles render it.
   return text
-    .replaceAll(/[*"`~#>]/g, '')
     .replaceAll(/\bx\s+four\s+zero\s+two\b/gi, 'x402')
     .replaceAll(/\bERC\s+twenty\b/gi, 'ERC20')
     .replaceAll(/\bEIP\s+seven\s+twelve\b/gi, 'EIP-712');
@@ -128,18 +20,21 @@ interface Segment {
   id: string;
   text: string;
   role: 'assistant' | 'user';
+  local?: boolean;
 }
 
 /**
- * Deepgram finalises a new segment each time the speaker pauses briefly,
- * which would render every breath as a separate bubble. Merge consecutive
- * same-role segments into a single bubble to match natural speech.
+ * Deepgram finalises a new segment each time the user pauses briefly, which
+ * would render every breath as a separate bubble, so consecutive spoken user
+ * segments merge into one. Each agent segment is a separate reply (e.g. "let
+ * me check" before a search, then the answer) and typed messages are already
+ * whole, so those keep their own bubbles.
  */
 export const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] => {
   const merged: T[] = [];
   for (const seg of segments) {
     const last = merged[merged.length - 1];
-    if (last && last.role === seg.role) {
+    if (last && last.role === 'user' && seg.role === 'user' && !last.local && !seg.local) {
       last.text = `${last.text} ${seg.text}`.replace(/\s+/g, ' ').trim();
     } else {
       merged.push({ ...seg });
@@ -151,13 +46,15 @@ export const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] 
 export default function TranscriptionView({
   mood,
   combinedTranscriptions,
+  showThinking = true,
 }: {
   mood: AgentMoodI;
   combinedTranscriptions: Transcription[];
+  showThinking?: boolean;
 }) {
   const { state } = useVoiceAssistant();
 
-  const isThinking = state === 'thinking' || state === 'connecting';
+  const isThinking = showThinking && state === 'thinking';
 
   const lastScrolledID = React.useRef<string | null>(null);
 
@@ -197,7 +94,7 @@ export default function TranscriptionView({
 
   return (
     <div
-      className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden py-8 md:w-[700px] w-full pb-64 md:pb-60 px-4"
+      className="flex flex-col gap-4 overflow-y-auto overflow-x-hidden py-8 md:w-[700px] w-full pb-32 px-4"
       onWheel={preventAutoScrollOnHumanScroll}
       onTouchStart={preventAutoScrollOnHumanScroll}
     >
@@ -242,11 +139,40 @@ const ChatBubble = ({
           ? `assistant-bubble rounded-2xl px-6 py-4 self-start md:max-w-[70%] max-w-[90%] shadow-md font-medium md:font-normal text-sm md:text-lg bg-[#A15EED] text-white ${isLast ? 'rounded-tl-none' : ''}`
           : `user-bubble bg-white text-[#273339] border border-[#E4EAEB] rounded-2xl px-6 py-4 self-end md:max-w-[70%] font-medium md:font-normal max-w-[90%] shadow-md text-sm md:text-lg ${isLast ? 'rounded-br-none' : ''}`
       )}
-      style={{ wordBreak: 'break-word', whiteSpace: 'pre-line' }}
+      style={{ wordBreak: 'break-word', whiteSpace: role === 'user' ? 'pre-line' : undefined }}
     >
-      {text?.toLocaleLowerCase()}
+      {role === 'assistant' && text ? (
+        <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {text}
+        </Markdown>
+      ) : (
+        text
+      )}
 
       {thinking && <div className={'rounded-full animate-pulse opacity-80'}>Thinking...</div>}
     </div>
   );
+};
+
+// Styles for markdown inside the purple assistant bubble. Links open in a new
+// tab, since leaving the page would drop the live session.
+const markdownComponents: Components = {
+  p: ({ node, ...props }) => <p className="[&:not(:first-child)]:mt-3" {...props} />,
+  a: ({ node, ...props }) => (
+    <a
+      {...props}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline underline-offset-2 decoration-white/60 hover:decoration-white break-all"
+    />
+  ),
+  ul: ({ node, ...props }) => <ul className="mt-2 list-disc pl-5 space-y-1" {...props} />,
+  ol: ({ node, ...props }) => <ol className="mt-2 list-decimal pl-5 space-y-1" {...props} />,
+  strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
+  h1: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
+  h2: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
+  h3: ({ node, ...props }) => <p className="font-semibold [&:not(:first-child)]:mt-3" {...props} />,
+  code: ({ node, ...props }) => <code className="rounded bg-white/15 px-1 py-0.5 font-mono text-[0.9em]" {...props} />,
+  pre: ({ node, ...props }) => <pre className="mt-2 overflow-x-auto rounded-lg bg-black/20 p-3 text-sm" {...props} />,
+  blockquote: ({ node, ...props }) => <blockquote className="mt-2 border-l-2 border-white/50 pl-3" {...props} />,
 };
