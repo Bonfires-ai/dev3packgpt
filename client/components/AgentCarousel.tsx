@@ -26,15 +26,17 @@ export function AgentCarousel({
   onChange,
   mood,
   disabled,
+  agents = homeAgents,
 }: {
   value: string;
   onChange: (agent: string) => void;
   mood: AgentMoodI;
   disabled?: boolean;
+  agents?: HomeAgent[];
 }) {
   const index = Math.max(
     0,
-    homeAgents.findIndex(agent => agent.slug === value)
+    agents.findIndex(agent => agent.slug === value)
   );
   const viewport = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -58,8 +60,8 @@ export function AgentCarousel({
   }, [index, step, x]);
 
   const go = (next: number) => {
-    const clamped = Math.min(homeAgents.length - 1, Math.max(0, next));
-    if (clamped !== index) onChange(homeAgents[clamped].slug);
+    const clamped = Math.min(agents.length - 1, Math.max(0, next));
+    if (clamped !== index) onChange(agents[clamped].slug);
     else animate(x, -index * step, SPRING);
   };
 
@@ -96,12 +98,12 @@ export function AgentCarousel({
           )}
           style={{ x }}
           drag={disabled ? false : 'x'}
-          dragConstraints={{ left: -(homeAgents.length - 1) * step, right: 0 }}
+          dragConstraints={{ left: -(agents.length - 1) * step, right: 0 }}
           dragElastic={0.15}
           dragMomentum={false}
           onDragEnd={handleDragEnd}
         >
-          {homeAgents.map((agent, i) => (
+          {agents.map((agent, i) => (
             <Slide key={agent.slug} agent={agent} mood={mood} active={i === index} />
           ))}
         </motion.div>
@@ -117,7 +119,7 @@ export function AgentCarousel({
       <ArrowButton
         direction="next"
         onClick={() => go(index + 1)}
-        disabled={disabled || index === homeAgents.length - 1}
+        disabled={disabled || index === agents.length - 1}
         className="left-full ml-1"
       />
     </div>
@@ -145,9 +147,11 @@ function Slide({ agent, mood, active }: { agent: HomeAgent; mood: AgentMoodI; ac
               aria-hidden={m !== mood}
               width={328}
               height={328}
+              // Profile photos come from the sign-in provider, not this app.
+              unoptimized={avatar[m].startsWith('http')}
               draggable={false}
               className={clsx(
-                '[grid-area:1/1] h-auto w-full select-none transition-opacity duration-300 motion-reduce:transition-none',
+                '[grid-area:1/1] aspect-square w-full object-cover select-none transition-opacity duration-300 motion-reduce:transition-none',
                 m === mood ? 'opacity-100' : 'opacity-0'
               )}
               priority
@@ -155,20 +159,22 @@ function Slide({ agent, mood, active }: { agent: HomeAgent; mood: AgentMoodI; ac
           ))}
         </div>
       ) : (
-        <PlaceholderAvatar name={agent.name} />
+        <PlaceholderAvatar name={agent.name} initials={agent.initials} />
       )}
     </div>
   );
 }
 
 // Stands in until the agent has artwork: the initials on the avatar's paper tone.
-function PlaceholderAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(/\s+/)
-    .map(word => word[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+function PlaceholderAvatar({ name, initials: given }: { name: string; initials?: string }) {
+  const initials =
+    given ??
+    name
+      .split(/\s+/)
+      .map(word => word[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   return (
     <div
       role="img"

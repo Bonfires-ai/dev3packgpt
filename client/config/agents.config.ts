@@ -15,6 +15,8 @@ export interface HomeAgent {
   startLabel: ByMood<string>;
   // Without one the carousel shows a placeholder with the initials.
   avatar?: ByMood<string>;
+  // Placeholder letters; defaults to the name's initials.
+  initials?: string;
 }
 
 const { english, spanish } = personaConfig.moods;

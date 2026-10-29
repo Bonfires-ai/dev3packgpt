@@ -1,3 +1,4 @@
+import { requireMember } from '@/lib/auth';
 import crypto from 'crypto';
 import { jwtVerify } from 'jose';
 import { AccessToken, AccessTokenOptions, VideoGrant } from 'livekit-server-sdk';
@@ -31,6 +32,10 @@ export type ConnectionDetails = {
 };
 
 export async function GET(request: Request) {
+  // Only signed-in fleet members may open a voice room.
+  const member = await requireMember();
+  if (member instanceof NextResponse) return member;
+
   try {
     const { searchParams } = new URL(request.url);
 

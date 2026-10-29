@@ -84,6 +84,13 @@ export const personaConfig = {
         blocked: 'Your microphone is blocked. Allow it from the icon in the address bar, then try again.',
         missing: 'No microphone found. Connect one and try again.',
       },
+      signIn: {
+        title: 'Verify your account',
+        body: 'Sign in with the email that is approved by Dev3Pack for this cohort.',
+        signIn: 'Sign in',
+        redirecting: 'Redirecting…',
+        cancel: 'Not now',
+      },
     },
     spanish: {
       label: 'Español',
@@ -134,6 +141,13 @@ export const personaConfig = {
         blocked:
           'Tu micrófono está bloqueado. Permítelo desde el icono de la barra de direcciones y vuelve a intentarlo.',
         missing: 'No se encontró ningún micrófono. Conecta uno y vuelve a intentarlo.',
+      },
+      signIn: {
+        title: 'Verifica tu cuenta',
+        body: 'Inicia sesión con el correo aprobado por Dev3Pack para esta cohorte.',
+        signIn: 'Iniciar sesión',
+        redirecting: 'Redirigiendo…',
+        cancel: 'Ahora no',
       },
     },
   },

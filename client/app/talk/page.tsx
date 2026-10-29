@@ -3,6 +3,7 @@
 import { ChatRoom } from '@/components/ChatRoom';
 import LoadingPage from '@/components/LoadingPage';
 import { PaymentGate } from '@/components/PaymentGate';
+import { useAuth } from '@/hooks/useAuth';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -18,6 +19,7 @@ const TalkComponent = () => {
   const mood = parseMoodQueryParam(searchParams.get('mood'));
   const router = useRouter();
   const { room, status, error, start } = useTalkSession();
+  const { loading: authLoading, signedIn, signIn } = useAuth();
   const started = useRef(false);
 
   const startOnce = useCallback(
@@ -32,8 +34,11 @@ const TalkComponent = () => {
   useEffect(() => {
     // redirect to home page if no mood is selected
     if (!mood) router.push('/');
+    else if (authLoading) return;
+    // Signed-out visitors log in first and come back to this link.
+    else if (!signedIn) signIn();
     else if (!NEEDS_PAYMENT) startOnce();
-  }, [mood, router, startOnce]);
+  }, [mood, router, startOnce, authLoading, signedIn, signIn]);
 
   if (!mood) return <></>;
 

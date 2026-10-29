@@ -1,3 +1,4 @@
+import { requireMember } from '@/lib/auth';
 import { saltsAgentAuth, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
 import { NextResponse } from 'next/server';
 
@@ -6,6 +7,9 @@ export const dynamic = 'force-dynamic';
 // Starts one Salts session for a text chat. The browser deletes it when the
 // chat ends (DELETE /api/salts/sessions/<id>).
 export async function POST(request: Request) {
+  const member = await requireMember();
+  if (member instanceof NextResponse) return member;
+
   const { agent } = await request.json().catch(() => ({}));
   const auth = saltsAgentAuth(agent);
   if (!auth) return unknownAgent();
