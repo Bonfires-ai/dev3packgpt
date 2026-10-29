@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef } from 'react';
 
 const parseMoodQueryParam = (query: string | null): AgentMoodI | null =>
-  query === AgentMoodEnum.ENGLISH || query === AgentMoodEnum.FRENCH ? query : null;
+  query === AgentMoodEnum.ENGLISH || query === AgentMoodEnum.SPANISH ? query : null;
 
 // Direct links (/talk?mood=english) and paid sessions land here. Free sessions
 // normally start from the home page without leaving it.

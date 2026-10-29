@@ -1,11 +1,13 @@
 import { AgentAudioVisualizerRadial } from '@/components/AgentAudioVisualizerRadial';
 import { NoAgentNotification } from '@/components/NoAgentNotification';
 import { SessionEndCard } from '@/components/SessionEndCard';
-import TranscriptionView, { mergeConsecutiveSegments, sanitizeText } from '@/components/TranscriptionView';
+import TranscriptionView from '@/components/TranscriptionView';
 import { MicIcon } from '@/components/icons/MicIcon';
+import { PhoneDownIcon } from '@/components/icons/PhoneDownIcon';
 import { personaConfig } from '@/config/persona.config';
 import useCombinedTranscriptions, { type Transcription } from '@/hooks/useCombinedTranscriptions';
 import useLocalMicTrack from '@/hooks/useLocalMicTrack';
+import { downloadTranscript } from '@/lib/transcript';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import {
   type AgentState,
@@ -38,7 +40,7 @@ export function VoiceAssistant({
 
   const room = useRoomContext();
 
-  const moodKey = mood === AgentMoodEnum.FRENCH ? 'french' : 'english';
+  const moodKey = mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english';
   const moodConfig = personaConfig.moods[moodKey];
   const accent = moodConfig.visualizerBgColor;
 
@@ -103,31 +105,14 @@ export function VoiceAssistant({
     await room.localParticipant.sendText(String(next), { topic: 'agent_audio_muted' });
   };
 
-  // Downloads the conversation as Markdown: a title and details, then one
-  // section per message. Solène's replies are kept as the Markdown she wrote.
-  const handleSaveSession = () => {
-    const card = moodConfig.endCard;
-    const started = combinedTranscriptions[0]?.firstReceivedTime ?? Date.now();
-    const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const messages = mergeConsecutiveSegments(combinedTranscriptions).map(segment => {
-      const speaker = segment.role === 'assistant' ? personaConfig.appName : card.transcriptYou;
-      return `### ${speaker} · ${time(segment.firstReceivedTime)}\n\n${sanitizeText(segment.text).trim()}`;
+  const handleSaveSession = () =>
+    downloadTranscript({
+      messages: combinedTranscriptions,
+      mood,
+      agentName: personaConfig.appName,
+      title: moodConfig.endCard.transcriptTitle,
+      filePrefix: 'solene-session',
     });
-    const markdown = [
-      `# ${card.transcriptTitle}`,
-      `**${card.transcriptLanguage}:** ${moodConfig.label}  \n**${card.transcriptDate}:** ${new Date(started).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' })}`,
-      '---',
-      ...messages,
-    ].join('\n\n');
-
-    const blob = new Blob([`${markdown}\n`], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `solene-session-${new Date(started).toISOString().slice(0, 16).replace(/[:T]/g, '-')}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const inSession = !ended && !ending;
 
@@ -148,7 +133,7 @@ export function VoiceAssistant({
         <TranscriptionView
           mood={mood}
           combinedTranscriptions={combinedTranscriptions}
-          showThinking={inSession}
+          thinking={inSession && agentState === 'thinking'}
           footer={
             ended && (
               <SessionEndCard
@@ -320,12 +305,6 @@ const MicOffIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-  </svg>
-);
-
-const PhoneDownIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
   </svg>
 );
 

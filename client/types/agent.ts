@@ -1,9 +1,9 @@
 export enum AgentMoodEnum {
   ENGLISH = 'english',
-  FRENCH = 'french',
+  SPANISH = 'spanish',
 }
 
-export type AgentMoodI = AgentMoodEnum.FRENCH | AgentMoodEnum.ENGLISH;
+export type AgentMoodI = AgentMoodEnum.SPANISH | AgentMoodEnum.ENGLISH;
 
 export interface ZoraCoinResult {
   zoraLink: string;

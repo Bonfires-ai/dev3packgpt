@@ -12,7 +12,7 @@ type Props = { searchParams: { lang?: string } };
  * a large preview; people who click through land on the home page.
  */
 export function generateMetadata({ searchParams }: Props): Metadata {
-  const mood = searchParams.lang === AgentMoodEnum.FRENCH ? 'french' : 'english';
+  const mood = searchParams.lang === AgentMoodEnum.SPANISH ? 'spanish' : 'english';
   const card = personaConfig.moods[mood].endCard;
 
   // Absolute URLs from this request's host, so the preview works wherever the app is deployed.

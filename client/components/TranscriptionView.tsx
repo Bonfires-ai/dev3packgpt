@@ -1,6 +1,5 @@
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
-import { useVoiceAssistant } from '@livekit/components-react';
 import clsx from 'clsx';
 import * as React from 'react';
 import Markdown, { type Components } from 'react-markdown';
@@ -46,21 +45,20 @@ export const mergeConsecutiveSegments = <T extends Segment>(segments: T[]): T[] 
 export default function TranscriptionView({
   mood,
   combinedTranscriptions,
-  showThinking = true,
+  thinking = false,
   header,
   footer,
 }: {
   mood: AgentMoodI;
   combinedTranscriptions: Transcription[];
-  showThinking?: boolean;
+  // Shows the "Thinking..." bubble after the last message.
+  thinking?: boolean;
   // Rendered above the messages, inside the scroll area.
   header?: React.ReactNode;
   // Rendered after the messages, inside the scroll area.
   footer?: React.ReactNode;
 }) {
-  const { state } = useVoiceAssistant();
-
-  const isThinking = showThinking && state === 'thinking';
+  const isThinking = thinking;
 
   const lastScrolledID = React.useRef<string | null>(null);
 

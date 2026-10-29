@@ -16,7 +16,7 @@ interface PaymentGateProps {
   onSessionReady: (sessionToken: string) => void;
 }
 
-const getMoodKey = (mood: AgentMoodI) => (mood === AgentMoodEnum.FRENCH ? 'french' : 'english');
+const getMoodKey = (mood: AgentMoodI) => (mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english');
 
 const stepLabels: Record<VoiceSessionStep, string> = {
   DISCONNECTED: 'Connect wallet to begin',

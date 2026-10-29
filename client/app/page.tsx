@@ -1,15 +1,19 @@
 'use client';
 
+import { AgentCarousel } from '@/components/AgentCarousel';
 import { Button } from '@/components/Button';
 import { ChatRoom } from '@/components/ChatRoom';
 import { LanguageSelect } from '@/components/LanguageSelect';
 import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
+import { TextAssistant } from '@/components/TextAssistant';
+import { VOICE_AGENT, findHomeAgent, homeAgents } from '@/config/agents.config';
 import { personaConfig } from '@/config/persona.config';
+import { findSaltsAgent } from '@/config/salts.config';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
+import { useTextSession } from '@/hooks/useTextSession';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import GitHubButton from 'react-github-btn';
@@ -21,7 +25,11 @@ export default function HomePage() {
   const router = useRouter();
   const [mood, setMood] = useState<AgentMoodI>(AgentMoodEnum.ENGLISH);
   const { room, status, error, start, reset } = useTalkSession();
-  const starting = status === 'connecting';
+  const text = useTextSession();
+  const [agent, setAgent] = useState(VOICE_AGENT);
+  const homeAgent = findHomeAgent(agent) ?? homeAgents[0];
+  const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
+  const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
   const [micDialog, setMicDialog] = useState<MicDialogState | null>(null);
 
@@ -29,7 +37,7 @@ export default function HomePage() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LANGUAGE_KEY);
-      if (saved === AgentMoodEnum.ENGLISH || saved === AgentMoodEnum.FRENCH) setMood(saved);
+      if (saved === AgentMoodEnum.ENGLISH || saved === AgentMoodEnum.SPANISH) setMood(saved);
     } catch {}
   }, []);
 
@@ -41,6 +49,11 @@ export default function HomePage() {
   };
 
   const handleStart = async () => {
+    // Text agents need no mic and no payment.
+    if (textAgent) {
+      text.start(textAgent.slug);
+      return;
+    }
     // Paid sessions go through the wallet flow on /talk first.
     if (NEEDS_PAYMENT) {
       router.push(`/talk?mood=${mood}`);
@@ -56,11 +69,27 @@ export default function HomePage() {
     return <ChatRoom room={room} mood={mood} ended={status === 'ended'} onRestart={reset} />;
   }
 
+  if (textAgent && (text.status === 'connected' || text.status === 'ended')) {
+    return (
+      <TextAssistant
+        agent={textAgent}
+        mood={mood}
+        messages={text.messages}
+        thinking={text.thinking}
+        replying={text.replying}
+        ended={text.status === 'ended'}
+        onSend={text.send}
+        onEnd={text.end}
+        onRestart={text.reset}
+      />
+    );
+  }
+
   // Header, hero and footer rows; the hero centres in the middle one. Title,
   // avatar and gaps all scale with the viewport height (clamped), so the hero
   // keeps its proportions and fits one screen instead of one part shrinking.
   return (
-    <main className="min-h-dvh grid grid-rows-[auto_1fr_auto] bg-[#F5F5F5] relative">
+    <main className="min-h-dvh grid grid-rows-[auto_1fr_auto] bg-[#F5F5F5] relative overflow-x-clip">
       {/* Dot pattern background */}
       <div
         className="fixed inset-0 pointer-events-none"
@@ -89,12 +118,18 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            // One line at a fixed height whatever the name, so switching agents
+            // never moves anything below; longer names step down a size to fit.
             className={clsx(
-              'text-6xl md:text-[clamp(4.5rem,11dvh,7rem)] text-[#A15EED] leading-[0.9] tracking-[0.04em]',
+              'flex items-end justify-center whitespace-nowrap h-[3.375rem] md:h-[clamp(4.05rem,9.9dvh,6.3rem)]',
+              'text-[#A15EED] leading-[0.9] tracking-[0.04em]',
+              homeAgent.name.length > 8
+                ? 'text-[min(8.5vw,3.75rem)] md:text-[clamp(3.5rem,9dvh,5.5rem)]'
+                : 'text-6xl md:text-[clamp(4.5rem,11dvh,7rem)]',
               nyghtMedium.className
             )}
           >
-            {personaConfig.heroTitle}
+            {homeAgent.name}
           </motion.h1>
 
           {/* Decorative rule */}
@@ -111,33 +146,18 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-4 md:mt-5 text-xs md:text-sm text-[#8E989C] font-inter font-medium tracking-[0.25em] uppercase"
           >
-            {moodConfig.heroSubtitle}
+            {homeAgent.subtitle[mood]}
           </motion.p>
         </div>
 
-        {/* Avatar */}
+        {/* Avatar: swipe between the agents */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-[clamp(1.25rem,4dvh,2.5rem)] grid justify-items-center"
+          className="mt-[clamp(1.25rem,4dvh,2.5rem)]"
         >
-          {/* Both language avatars share one cell and crossfade, so switching never flashes blank. */}
-          {[AgentMoodEnum.ENGLISH, AgentMoodEnum.FRENCH].map(m => (
-            <Image
-              key={m}
-              src={personaConfig.moods[m].avatarImage}
-              alt={m === mood ? personaConfig.heroAvatarAlt : ''}
-              aria-hidden={m !== mood}
-              width={328}
-              height={328}
-              className={clsx(
-                '[grid-area:1/1] h-auto w-[clamp(140px,26dvh,200px)] md:w-[clamp(180px,30dvh,300px)] transition-opacity duration-300 motion-reduce:transition-none',
-                m === mood ? 'opacity-100' : 'opacity-0'
-              )}
-              priority
-            />
-          ))}
+          <AgentCarousel value={agent} onChange={setAgent} mood={mood} disabled={starting} />
         </motion.div>
 
         {/* CTA */}
@@ -154,12 +174,12 @@ export default function HomePage() {
             className={clsx('inline-flex items-center justify-center gap-3', starting && 'cursor-wait opacity-90')}
           >
             {starting && <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-            {starting ? moodConfig.startingLabel : moodConfig.startChatButtonLabel}
+            {starting ? moodConfig.startingLabel : homeAgent.startLabel[mood]}
           </Button>
           <LanguageSelect value={mood} onChange={handleLanguageChange} disabled={starting} />
           {/* Out of the flow, so an error never pushes the page into scrolling. */}
           <p role="alert" className="absolute inset-x-0 top-full mt-3 text-sm font-inter text-[#DC2626]">
-            {error}
+            {error ?? text.error}
           </p>
         </motion.div>
       </div>
@@ -215,7 +235,7 @@ export default function HomePage() {
 
       {/* Prefetch avatar images for faster loading */}
       <link rel="prefetch" href={personaConfig.moods.english.avatarImage} as="image" type="image/gif" />
-      <link rel="prefetch" href={personaConfig.moods.french.avatarImage} as="image" type="image/gif" />
+      <link rel="prefetch" href={personaConfig.moods.spanish.avatarImage} as="image" type="image/gif" />
     </main>
   );
 }

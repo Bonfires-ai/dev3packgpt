@@ -6,7 +6,7 @@ import clsx from 'clsx';
 
 const OPTIONS: { mood: AgentMoodI; flag: string }[] = [
   { mood: AgentMoodEnum.ENGLISH, flag: '🇬🇧' },
-  { mood: AgentMoodEnum.FRENCH, flag: '🇫🇷' },
+  { mood: AgentMoodEnum.SPANISH, flag: '🇪🇸' },
 ];
 
 // Square corners and tracked uppercase, like the CTA above it. The selected
