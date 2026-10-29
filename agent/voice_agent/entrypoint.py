@@ -282,7 +282,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     session = AgentSession(
         stt=deepgram.STT(**stt_kwargs),
         llm=openai.LLM(
-            model=os.environ.get("LLM_MODEL", "z-ai/glm-5.3"),
+            model=os.environ.get("LLM_MODEL", "z-ai/glm-5.3-flash"),
             base_url=os.environ.get("LLM_BASE_URL", "https://openrouter.ai/api/v1"),
             api_key=os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPENAI_API_KEY"),
         ),
