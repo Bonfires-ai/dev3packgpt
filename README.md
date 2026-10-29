@@ -109,7 +109,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, fr for French mode) |
 | `ELEVEN_API_KEY` | Text-to-speech |
 | `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` | ElevenLabs voice clones for each language |
-| `OPENROUTER_API_KEY` | LLM (`gpt-4.1-mini` by default; override with `LLM_MODEL`) |
+| `OPENROUTER_API_KEY` | LLM (`z-ai/glm-5.3` by default; override with `LLM_MODEL`) |
 
 **Client (`client/.env.local`)**
 
