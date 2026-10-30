@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 
 // Sends one message and passes the Salts reply stream (SSE: delta, tool,
 // tool_done, usage, error, done) straight through to the browser. The message is
-// paid with the member's own OpenRouter wallet key, never the fleet agent's: Salts
-// refuses a message from this app without one.
+// paid with the member's own OpenRouter wallet key (Salts' x-openrouter-key), never
+// the fleet agent's: without the wallet key it is not sent at all.
 export async function POST(request: Request, { params }: { params: { sessionId: string } }) {
   const member = await requireMember();
   if (member instanceof NextResponse) return member;
