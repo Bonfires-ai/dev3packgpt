@@ -109,7 +109,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, es for Spanish mode) |
 | `ELEVEN_API_KEY` | Text-to-speech |
 | `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` | ElevenLabs voice clones for each language |
-| `LIVEKIT_AGENT_NAME` | Optional, default `solene`. The agent only joins rooms the client dispatches it to, with the signed-in member's OpenRouter key; it has no key of its own. LLM is `z-ai/glm-5.3` by default (override with `LLM_MODEL`) |
+| `LIVEKIT_AGENT_NAME` | Optional, default `dev3pack_instructor`. The agent only joins rooms the client dispatches it to, with the signed-in member's OpenRouter key; it has no key of its own. LLM is `z-ai/glm-5.3` by default (override with `LLM_MODEL`) |
 
 **Client (`client/.env.local`)**
 
@@ -127,7 +127,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `OPENROUTER_PROVISIONING_KEY` | OpenRouter provisioning key: makes each fleet member's key on their first sign-in |
 | `OPENROUTER_KEY_CREDIT_USD` | Credit limit on each member's key (default `0.5`) |
 | `WALLET_ENCRYPTION_KEY` | Encrypts the stored keys (AES-256-GCM); `openssl rand -hex 32` |
-| `LIVEKIT_AGENT_NAME` | Optional, default `solene`; must match the agent's |
+| `LIVEKIT_AGENT_NAME` | Optional, default `dev3pack_instructor`; must match the agent's |
 | `NEXT_PUBLIC_PAYMENT_DEFAULT_AMOUNT` | Session price in USD (default `0.20`) |
 | `NEXT_PUBLIC_DISABLE_X402` | `true` to disable wallet + payment entirely (free sessions; useful for demos / workshops). Default `false`. |
 
@@ -197,6 +197,9 @@ Single source of truth for persona is [`agent/voice_agent/persona_config.py`](ag
 - `ENGLISH_GREETINGS` / `SPANISH_GREETINGS` — randomly selected at session start
 - `_WARM_TONE_GUIDELINES` — shared persona behaviour across both languages
 - `STT_KEYWORDS` — Deepgram keyterm boosting (English-only by Deepgram limitation)
+- `PERSONAS` — every persona the one `dev3pack_instructor` agent can take: name, intro and goal per language, voice
+
+Each voice session's dispatch names its `persona`, `language` and `mcp_server`. The client picks them per voice slide in `voiceSessions` ([`client/config/agents.config.ts`](client/config/agents.config.ts)); the agent resolves `mcp_server: "dev3pack_es"` to its `MCP_DEV3PACK_ES_URL` / `MCP_DEV3PACK_ES_KEY` secrets. To add a persona, add a `PERSONAS` entry, redeploy the agent, and point a slide at it.
 
 Client-side branding lives in [`client/config/persona.config.ts`](client/config/persona.config.ts) — page title, tagline, hero copy, share copies, footer links.
 

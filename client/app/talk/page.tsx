@@ -4,6 +4,7 @@ import { ChatRoom } from '@/components/ChatRoom';
 import LoadingPage from '@/components/LoadingPage';
 import { PaymentGate } from '@/components/PaymentGate';
 import { useAuth } from '@/hooks/useAuth';
+import { VOICE_AGENT } from '@/config/agents.config';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -17,6 +18,7 @@ const parseMoodQueryParam = (query: string | null): AgentMoodI | null =>
 const TalkComponent = () => {
   const searchParams = useSearchParams();
   const mood = parseMoodQueryParam(searchParams.get('mood'));
+  const agent = searchParams.get('agent') ?? VOICE_AGENT;
   const router = useRouter();
   const { room, status, error, start } = useTalkSession();
   const { loading: authLoading, signedIn, signIn } = useAuth();
@@ -26,9 +28,9 @@ const TalkComponent = () => {
     (token?: string) => {
       if (!mood || started.current) return;
       started.current = true;
-      start(mood, token);
+      start(mood, agent, token);
     },
-    [mood, start]
+    [mood, agent, start]
   );
 
   useEffect(() => {

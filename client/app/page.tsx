@@ -94,12 +94,12 @@ export default function HomePage() {
     }
     // Paid sessions go through the wallet flow on /talk first.
     if (NEEDS_PAYMENT) {
-      router.push(`/talk?mood=${mood}`);
+      router.push(`/talk?mood=${mood}&agent=${agent}`);
       return;
     }
     // Ask for the mic in our own dialog first, unless access is already granted.
     const permission = await micPermission();
-    if (permission === 'granted') start(mood);
+    if (permission === 'granted') start(mood, agent);
     else setMicDialog(permission === 'denied' ? 'blocked' : 'ask');
   };
 
@@ -315,7 +315,7 @@ export default function HomePage() {
           onClose={() => setMicDialog(null)}
           onGranted={() => {
             setMicDialog(null);
-            start(mood);
+            start(mood, agent);
           }}
         />
       )}

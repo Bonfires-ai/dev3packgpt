@@ -1,5 +1,7 @@
+import { VOICE_AGENT, voiceSessions } from '@/config/agents.config';
 import { requireMember } from '@/lib/auth';
 import { ensureWalletKey } from '@/lib/wallet';
+import { AgentMoodEnum } from '@/types/agent';
 import crypto from 'crypto';
 import { jwtVerify } from 'jose';
 import { AccessToken, AccessTokenOptions, AgentDispatchClient, VideoGrant } from 'livekit-server-sdk';
@@ -10,7 +12,7 @@ const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
 // The voice agent registers under this name and joins only rooms it is dispatched to.
-const AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? 'solene';
+const AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? 'dev3pack_instructor';
 
 // Voice session JWT gate — if set, requires a valid session token from Delve
 const VOICE_SESSION_JWT_SECRET = process.env.VOICE_SESSION_JWT_SECRET;
@@ -91,6 +93,13 @@ export async function GET(request: Request) {
     // --- End Gate ---
 
     const mood = searchParams.get('mood');
+    if (mood !== AgentMoodEnum.ENGLISH && mood !== AgentMoodEnum.SPANISH) {
+      return NextResponse.json({ error: 'Unknown language' }, { status: 400 });
+    }
+    const voiceSession = voiceSessions[searchParams.get('agent') ?? VOICE_AGENT];
+    if (!voiceSession) {
+      return NextResponse.json({ error: 'Unknown agent' }, { status: 400 });
+    }
 
     if (LIVEKIT_URL === undefined) {
       throw new Error('LIVEKIT_URL is not defined');
@@ -119,7 +128,12 @@ export async function GET(request: Request) {
     // Dispatched from here, not through the participant token or room metadata, since
     // the browser can read both; only the agent's job sees the dispatch metadata.
     await new AgentDispatchClient(LIVEKIT_URL, API_KEY, API_SECRET).createDispatch(roomName, AGENT_NAME, {
-      metadata: JSON.stringify({ openrouter_api_key: openrouterKey }),
+      metadata: JSON.stringify({
+        openrouter_api_key: openrouterKey,
+        persona: voiceSession.persona,
+        language: mood,
+        mcp_server: voiceSession.mcpServer[mood],
+      }),
     });
 
     // Return connection details

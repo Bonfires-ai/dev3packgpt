@@ -45,7 +45,7 @@ export function useTalkSession() {
   const [error, setError] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
 
-  const start = useCallback(async (mood: AgentMoodI, sessionToken?: string | null) => {
+  const start = useCallback(async (mood: AgentMoodI, agent: string, sessionToken?: string | null) => {
     setError(null);
     setStatus('connecting');
     track('conversation_started', { mood });
@@ -67,7 +67,7 @@ export function useTalkSession() {
     try {
       const token = sessionToken ?? (PAYMENTS_DISABLED ? await fetchFreeSessionToken() : null);
 
-      const params = new URLSearchParams({ mood });
+      const params = new URLSearchParams({ mood, agent });
       if (token) params.set('session_token', token);
       const url = new URL(
         process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',

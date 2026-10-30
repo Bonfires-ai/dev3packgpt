@@ -1,9 +1,11 @@
 """Centralized persona configuration.
 
-Two routing keys, both Solène as an instructor, language-flavoured:
+One agent, dev3pack_instructor, serves every voice session. The client's
+dispatch picks three things by name (see entrypoint.py):
 
-    mood "english" → Solène speaking English
-    mood "spanish" → Solène speaking Spanish, on the Spanish knowledge base
+    persona  → a PERSONAS entry: who the agent is, its intro, goal and voice
+    language → "english" or "spanish": STT language, greeting, goodbye, tone
+    mcp      → the one Bonfires MCP server whose knowledge tools it gets
 """
 
 import os
@@ -44,13 +46,6 @@ ENABLE_ZORA_MINTING = os.environ.get("ENABLE_ZORA_MINTING", "false").lower() != 
 DEEPGRAM_LANGUAGE_BY_MOOD = {
     "english": "en-US",
     "spanish": "es",
-}
-
-# Each language has its own Bonfires MCP server (dev3pack-mcp/mcp-server
-# instance): English reads dev3pack, Spanish reads dev3pack-es.
-MCP_ENV_BY_MOOD = {
-    "english": ("BONFIRES_MCP_URL", "BONFIRES_MCP_KEY"),
-    "spanish": ("BONFIRES_MCP_URL_ES", "BONFIRES_MCP_KEY_ES"),
 }
 
 # Voice IDs — ElevenLabs clones of Solène. There is no Spanish clone yet, so
@@ -169,6 +164,20 @@ SPANISH_GOAL = (
     "clara de qué aprender o probar después. Da una bienvenida especial a quienes empiezan, a "
     "las mujeres+, a las personas no binarias, a los estudiantes y a quienes vienen del Web2."
 )
+
+# ---------------------------------------------------------------------------
+# Personas — by the id the client sends in the dispatch. Each has its intro
+# and goal per language ({persona_name} is filled with "name") and its voice.
+# ---------------------------------------------------------------------------
+PERSONAS = {
+    "solene": {
+        "name": PERSONA_NAME,
+        "intro": {"english": ENGLISH_PERSONA_INTRO, "spanish": SPANISH_PERSONA_INTRO},
+        "goal": {"english": ENGLISH_GOAL, "spanish": SPANISH_GOAL},
+        "voice_id": VOICE_ID_BY_MOOD,
+    },
+}
+DEFAULT_PERSONA = "solene"
 
 # ---------------------------------------------------------------------------
 # STT keyword boosting — domain vocabulary across web3 + AI + Dev3pack.

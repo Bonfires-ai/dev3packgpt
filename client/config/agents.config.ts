@@ -62,6 +62,22 @@ export const homeAgents: HomeAgent[] = [
   },
 ];
 
+// What the dev3pack_instructor voice agent becomes for each voice slide: its
+// persona (PERSONAS in agent/voice_agent/persona_config.py) and, per language,
+// the one MCP server it searches (the agent's MCP_<NAME>_URL secret).
+export interface VoiceSession {
+  persona: string;
+  mcpServer: ByMood<string>;
+}
+
+const BONFIRES_MCP: ByMood<string> = { [AgentMoodEnum.ENGLISH]: 'dev3pack', [AgentMoodEnum.SPANISH]: 'dev3pack_es' };
+
+export const voiceSessions: Record<string, VoiceSession> = {
+  [VOICE_AGENT]: { persona: 'solene', mcpServer: BONFIRES_MCP },
+  // Fabian has no persona of his own yet, so he is Solène for now.
+  fabian: { persona: 'solene', mcpServer: BONFIRES_MCP },
+};
+
 // The start button on phones: one word by kind, in place of startLabel.
 export const shortStartLabel: Record<HomeAgent['kind'], ByMood<string>> = {
   voice: { [AgentMoodEnum.ENGLISH]: 'Talk', [AgentMoodEnum.SPANISH]: 'Hablar' },

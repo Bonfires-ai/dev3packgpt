@@ -6,15 +6,11 @@ guidelines).  Edit ``persona_config.py`` to swap in a different persona.
 """
 
 from voice_agent.persona_config import (
-    PERSONA_NAME,
     ENGLISH_TONE_GUIDELINES,
     SPANISH_TONE_GUIDELINES,
-    ENGLISH_PERSONA_INTRO,
-    SPANISH_PERSONA_INTRO,
-    ENGLISH_GOAL,
-    SPANISH_GOAL,
     ENGLISH_GREETINGS,
     SPANISH_GREETINGS,
+    PERSONAS,
 )
 
 # ---------------------------------------------------------------------------
@@ -88,11 +84,11 @@ Use the `end_conversation` function to end the conversation. Call it when the st
 # Shared constraints (response length, TTS, safety)
 # ---------------------------------------------------------------------------
 
-_COMMON_CONSTRAINTS = f"""
+_COMMON_CONSTRAINTS = """
 **Constraints:**
 
 *   **KEEP RESPONSES SHORT: Usually 2-4 sentences, never more than about 80 words.** Your answers may be spoken aloud. For a big topic, teach the first step and offer to continue rather than covering everything at once.
-*   **You ARE {PERSONA_NAME}. Speak in first person always.** Use your knowledge tools to recall your own material before answering. Never refer to yourself in the third person.
+*   **You ARE {persona_name}. Speak in first person always.** Use your knowledge tools to recall your own material before answering. Never refer to yourself in the third person.
 *   Sound natural and conversational – delivered concisely.
 *   **IMPORTANT: NEVER talk to yourself or continue the conversation if the user doesn't respond. Always wait for user input before responding again.**
 *   **Text and Voice Output:** Your reply is shown as text and also spoken. Use light Markdown where it makes the text easier to read: `inline code` for function, file, variable and command names (for example `answer_with_timeout`), **bold** for the key fact, a short bulleted list for 2 to 4 parallel items, and labelled links for sources. Markdown symbols are removed before speech, so every sentence must still sound natural read aloud: no headings, tables or code blocks, no emojis, no bare URLs. If the student needs code, name the function or describe it in a sentence. Answer the question in the first sentence, with numbers as digits ("3 out of 4").
@@ -113,6 +109,7 @@ _COMMON_CONSTRAINTS = f"""
 
 
 def _build_system_prompt(
+    persona_name: str,
     persona_intro: str,
     goal: str,
     tone_guidelines: str,
@@ -134,7 +131,7 @@ def _build_system_prompt(
 ===
 """
 
-    return f"""{persona_intro.format(persona_name=PERSONA_NAME)}
+    return f"""{persona_intro.format(persona_name=persona_name)}
 
 {priority_rules}
 
@@ -147,10 +144,10 @@ def _build_system_prompt(
 
 {tone_guidelines}
 
-{_COMMON_CONSTRAINTS}
+{_COMMON_CONSTRAINTS.format(persona_name=persona_name)}
 {extra_constraints}
 
-{tool_instructions.format(persona_name=PERSONA_NAME)}
+{tool_instructions.format(persona_name=persona_name)}
 """
 
 
@@ -159,31 +156,33 @@ _WARM_EXTRA = """*   Stay focused on the student's questions, with warmth and pa
 *   Use jargon naturally but explain it — accessibility first.
 *   Sound encouraging, present, and clear."""
 
-# Mood-specific prompt configs (used by build_mood_prompt at runtime)
+# Language-specific prompt configs; the persona supplies intro and goal.
 _MOOD_CONFIGS = {
     "english": {
-        "persona_intro": ENGLISH_PERSONA_INTRO,
-        "goal": ENGLISH_GOAL,
         "tone_guidelines": ENGLISH_TONE_GUIDELINES,
         "extra_constraints": _WARM_EXTRA,
     },
     "spanish": {
-        "persona_intro": SPANISH_PERSONA_INTRO,
-        "goal": SPANISH_GOAL,
         "tone_guidelines": SPANISH_TONE_GUIDELINES,
         "extra_constraints": _WARM_EXTRA,
     },
 }
 
 
-def build_mood_prompt(mood: str, primed_context: str = "") -> str:
-    """Build a system prompt for the given mood, optionally with primed context.
+def build_prompt(persona: str, mood: str, primed_context: str = "") -> str:
+    """Build the system prompt for *persona* in the *mood* language.
 
     Called at runtime from ``entrypoint.py`` so the primed knowledge graph
     context can be injected into the prompt before the conversation starts.
     """
-    config = _MOOD_CONFIGS.get(mood, _MOOD_CONFIGS["english"])
-    return _build_system_prompt(**config, primed_context=primed_context)
+    p = PERSONAS[persona]
+    return _build_system_prompt(
+        persona_name=p["name"],
+        persona_intro=p["intro"][mood],
+        goal=p["goal"][mood],
+        **_MOOD_CONFIGS[mood],
+        primed_context=primed_context,
+    )
 
 
 # ---------------------------------------------------------------------------

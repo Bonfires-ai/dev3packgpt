@@ -29,14 +29,14 @@ from voice_agent.persona_config import (
     VOICE_STYLE,
     VOICE_USE_SPEAKER_BOOST,
     DEEPGRAM_LANGUAGE_BY_MOOD,
-    MCP_ENV_BY_MOOD,
-    VOICE_ID_BY_MOOD,
+    DEFAULT_PERSONA,
+    PERSONAS,
 )
 from voice_agent.stt_words import stt_words
 from voice_agent.assistant import Assistant, end_session, prewarm
 from voice_agent import bonfires
 from voice_agent.constants import (
-    build_mood_prompt,
+    build_prompt,
     ELEVENLABS_DEFAULT_VOICE_ID,
     TIMEOUT_WARNING_TIME,
     TIMEOUT_SECONDS,
@@ -135,16 +135,25 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     """
 
     # ---------------------------------------------------------------------
-    # The member's OpenRouter key comes with the dispatch (see the client's
-    # /api/connection-details). The agent has no key of its own, so without
-    # one it does not join.
+    # The dispatch (see the client's /api/connection-details) carries the
+    # member's OpenRouter key and what this session is: persona, language and
+    # MCP server. The agent has no key of its own, so without one it does not
+    # join.
     # ---------------------------------------------------------------------
     try:
-        openrouter_api_key = json.loads(ctx.job.metadata or "{}").get("openrouter_api_key")
-    except (json.JSONDecodeError, AttributeError):
-        openrouter_api_key = None
+        dispatch = json.loads(ctx.job.metadata or "{}")
+    except json.JSONDecodeError:
+        dispatch = {}
+    if not isinstance(dispatch, dict):
+        dispatch = {}
+    openrouter_api_key = dispatch.get("openrouter_api_key")
     if not openrouter_api_key:
         logger.error("No OpenRouter key in the dispatch for room %s — not joining", ctx.room.name)
+        return
+
+    persona = dispatch.get("persona") or DEFAULT_PERSONA
+    if persona not in PERSONAS:
+        logger.error("Unknown persona %r in the dispatch for room %s — not joining", persona, ctx.room.name)
         return
 
     # ---------------------------------------------------------------------
@@ -163,12 +172,12 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
 
     ctx.room.on("participant_disconnected", _on_participant_disconnected)
 
-    try:
-        mood = ctx.room.name.split("_")[0]
-    except ValueError:
-        logger.warning("Room name does not contain a mood prefix – using default mood")
-        mood = "english"  # sensible default
-    logger.debug("Conversation mood resolved to '%s'", mood)
+    # The language is the mood; older clients only put it in the room name prefix.
+    mood = dispatch.get("language") or ctx.room.name.split("_")[0]
+    if mood not in DEEPGRAM_LANGUAGE_BY_MOOD:
+        logger.warning("Unknown language %r – using english", mood)
+        mood = "english"
+    logger.info("Session: persona=%s, language=%s", persona, mood)
 
     # Parse room ID from room name (format: <mood>_room_<roomId>)
     parts = ctx.room.name.split("_")
@@ -231,13 +240,13 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     else:
         logger.info("No primed context — agent will rely on persona alone")
 
-    system_prompt = build_mood_prompt(mood, primed_context=primed_context)
+    system_prompt = build_prompt(persona, mood, primed_context=primed_context)
 
     # ------------------------------------------------------------------
     # Create the Agent session with STT/LLM/TTS building blocks
     # ------------------------------------------------------------------
-    deepgram_language = DEEPGRAM_LANGUAGE_BY_MOOD.get(mood, "en-US")
-    voice_id = VOICE_ID_BY_MOOD.get(mood) or os.environ.get("ELEVEN_VOICE_ID", ELEVENLABS_DEFAULT_VOICE_ID)
+    deepgram_language = DEEPGRAM_LANGUAGE_BY_MOOD[mood]
+    voice_id = PERSONAS[persona]["voice_id"].get(mood) or os.environ.get("ELEVEN_VOICE_ID", ELEVENLABS_DEFAULT_VOICE_ID)
     logger.info("STT language=%s, voice_id=%s (mood=%s)", deepgram_language, voice_id, mood)
 
     # Deepgram nova-3 `keyterms` are English-only. Skip them for other languages
@@ -284,20 +293,24 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
             response_format="pcm",
         )
 
-    # Bonfires MCP server (mcp-server/ in dev3pack-mcp) for the knowledge tools,
-    # one per language. Deployed servers take an API key from their MCP_API_KEYS.
-    mcp_url_env, mcp_key_env = MCP_ENV_BY_MOOD.get(mood, MCP_ENV_BY_MOOD["english"])
+    # Bonfires MCP server (mcp-server/ in dev3pack-mcp) for the knowledge tools.
+    # The dispatch names it; its URL and key are the agent's MCP_<NAME>_URL and
+    # MCP_<NAME>_KEY secrets (a key from that server's MCP_API_KEYS). One per
+    # session, since every server has the same tool names.
+    mcp_name = dispatch.get("mcp_server") or ""
+    mcp_env = re.sub(r"[^A-Z0-9]", "_", mcp_name.upper())
+    mcp_url = os.environ.get(f"MCP_{mcp_env}_URL") if mcp_env else None
     mcp_server = None
-    if os.environ.get(mcp_url_env):
-        logger.info("Knowledge tools from %s (mood=%s)", os.environ[mcp_url_env], mood)
+    if mcp_url:
+        logger.info("Knowledge tools from %s (%s)", mcp_url, mcp_name)
         mcp_server = mcp.MCPServerHTTP(
-            url=os.environ[mcp_url_env],
-            headers={"Authorization": f"Bearer {os.environ.get(mcp_key_env, '')}"},
+            url=mcp_url,
+            headers={"Authorization": f"Bearer {os.environ.get(f'MCP_{mcp_env}_KEY', '')}"},
             allowed_tools=["search_documents", "search_knowledge_graph"],
             client_session_timeout_seconds=15,
         )
     else:
-        logger.warning("%s not set — agent has no knowledge tools", mcp_url_env)
+        logger.warning("No MCP server %r configured — agent has no knowledge tools", mcp_name)
 
     session = AgentSession(
         stt=deepgram.STT(**stt_kwargs),
@@ -501,7 +514,7 @@ def run_from_cli() -> None:
             prewarm_fnc=prewarm,
             # Explicit dispatch only: the client dispatches the agent with the
             # member's OpenRouter key, so it never joins a room on its own.
-            agent_name=os.environ.get("LIVEKIT_AGENT_NAME", "solene"),
+            agent_name=os.environ.get("LIVEKIT_AGENT_NAME", "dev3pack_instructor"),
             num_idle_processes=0,
             load_threshold=0.6,
             job_memory_limit_mb=800,
