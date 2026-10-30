@@ -147,8 +147,8 @@ function Slide({ agent, mood, active }: { agent: HomeAgent; mood: AgentMoodI; ac
               aria-hidden={m !== mood}
               width={328}
               height={328}
-              // Profile photos come from the sign-in provider, not this app.
-              unoptimized={avatar[m].startsWith('http')}
+              // Profile photos come from the sign-in provider, not this app; SVGs need no optimizing.
+              unoptimized={avatar[m].startsWith('http') || avatar[m].endsWith('.svg')}
               draggable={false}
               className={clsx(
                 '[grid-area:1/1] aspect-square w-full object-cover select-none transition-opacity duration-300 motion-reduce:transition-none',

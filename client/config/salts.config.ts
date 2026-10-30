@@ -22,6 +22,8 @@ export const saltsAgents: SaltsAgent[] = [
     slug: 'general-assistant',
     name: 'Bonfires Agent',
     subtitle: 'Personal teaching assistant',
+    // Signed out only: signed in, the slide shows the member's own photo or initials.
+    avatarImage: '/avatars/bonfires.svg',
     greeting: "Hi! I'm the Bonfires Agent. What can I help you with?",
     mcpServer: { english: 'Dev3Pack', spanish: 'Dev3Pack Spanish' },
   },
