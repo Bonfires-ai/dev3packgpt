@@ -1,51 +1,41 @@
-FROM python:3.13-slim AS build
+ARG PYTHON_VERSION=3.13
+FROM ghcr.io/astral-sh/uv:python${PYTHON_VERSION}-bookworm-slim AS base
+
+ENV PYTHONUNBUFFERED=1 \
+  UV_COMPILE_BYTECODE=1 \
+  # Model files from download-files live in /app so they ship with the app.
+  HF_HOME=/app/.cache/huggingface
 
 # ---------------------------------------------------------------------------
-# Build stage – install system deps & project dependencies  -----------------
+# Build stage – install locked dependencies and download model files --------
 # ---------------------------------------------------------------------------
-
-# Speed-ups & sane defaults for Python inside containers
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  PYTHONUNBUFFERED=1
+FROM base AS build
 
 RUN apt-get update -qy && \
-  apt-get install -qyy --no-install-recommends build-essential ca-certificates && \
+  apt-get install -qyy --no-install-recommends gcc g++ python3-dev && \
   rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY . /app
+# Dependencies first, so code changes reuse this layer.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
 
-# Create virtualenv & install project + production deps
-RUN python -m venv /venv && \
-  /venv/bin/pip install --upgrade pip wheel && \
-  /venv/bin/pip install --no-cache-dir .
+COPY . .
+RUN uv sync --locked --no-dev && \
+  uv run --no-sync python -m voice_agent download-files
 
 # ---------------------------------------------------------------------------
-# Runtime stage – lightweight image with just Python 3.13 + the built venv -------
+# Runtime stage ---------------------------------------------------------------
 # ---------------------------------------------------------------------------
-FROM python:3.13-slim AS runtime
+FROM base
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  PYTHONUNBUFFERED=1 \
-  PATH="/venv/bin:$PATH"
+ARG UID=10001
+RUN adduser --disabled-password --gecos "" --home /app --shell /sbin/nologin --uid "${UID}" appuser
 
-# Install shared libs required by some deps (e.g. regex, lxml, etc.) --------
-RUN apt-get update -qy && \
-  apt-get install -qyy --no-install-recommends libpcre2-8-0 libxml2 libglib2.0-0 && \
-  rm -rf /var/lib/apt/lists/*
-
-# Copy the prepared virtualenv from the build stage
-COPY --from=build /venv /venv
-
-COPY . /app
 WORKDIR /app
+COPY --from=build --chown=appuser:appuser /app /app
+USER appuser
 
-RUN /venv/bin/python -m voice_agent download-files
-
-# ---------------------------------------------------------------------------
-# Start the agent -----------------------------------------------------------
-# ---------------------------------------------------------------------------
-
-ENTRYPOINT ["/venv/bin/python", "-m", "voice_agent"]
+ENTRYPOINT ["uv", "run", "--no-sync", "python", "-m", "voice_agent"]
 CMD ["start"]
