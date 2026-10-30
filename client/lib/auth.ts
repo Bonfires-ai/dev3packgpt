@@ -28,7 +28,7 @@ const FLOW_COOKIE = 'solene_oauth';
 const SESSION_TTL = 12 * 60 * 60; // seconds
 const FLOW_TTL = 10 * 60; // seconds
 export const CALLBACK_PATH = '/api/auth/callback';
-export const CLIENT_METADATA_PATH = '/oauth/client-metadata.json';
+export const CLIENT_METADATA_PATH = '/oauth/dev3pack-client.json';
 
 /** How long a fleet lookup is reused; also the delay before a fleet removal takes effect. */
 const VERDICT_TTL = 60_000;
