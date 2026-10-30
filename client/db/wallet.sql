@@ -7,9 +7,7 @@ create table if not exists openrouter_wallets (
   -- OpenRouter's id for the key, to manage it with the provisioning key.
   openrouter_hash text not null unique,
   limit_usd numeric not null,
-  created_at timestamptz not null default now(),
-  -- Set when the key was shown to its owner; it is never shown again.
-  revealed_at timestamptz
+  created_at timestamptz not null default now()
 );
 
 -- Only the server reaches this table, through DATABASE_URL; keep it off the public API.

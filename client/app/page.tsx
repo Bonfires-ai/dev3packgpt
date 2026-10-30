@@ -9,7 +9,6 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
-import { WalletKeyDialog } from '@/components/WalletKeyDialog';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
 import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
@@ -306,8 +305,6 @@ export default function HomePage() {
           }}
         />
       )}
-
-      {wallet.key && <WalletKeyDialog openrouterKey={wallet.key} credit={wallet.credit} onClose={wallet.dismissKey} />}
 
       {buyCreditsOpen && <BuyCreditsDialog onPaid={wallet.setCredit} onClose={() => setBuyCreditsOpen(false)} />}
 

@@ -1,6 +1,7 @@
 // Server-side only. Each fleet member gets one OpenRouter key, made on their first
 // sign-in with the deployment's provisioning key and held to a fixed credit limit.
-// The voice agent spends from it; the key itself is shown to its owner once.
+// The voice agent and the Salts text chat spend from it; the key itself never
+// leaves the server.
 //
 // Keys are stored encrypted (AES-256-GCM, WALLET_ENCRYPTION_KEY) in Supabase
 // Postgres; see db/wallet.sql for the table.
@@ -91,15 +92,6 @@ export async function applyTopUps(email: string) {
       update openrouter_topups set applied_at = now()
        where tx_hash in ${sql(pending.map(p => p.tx_hash))}`;
   });
-}
-
-/** The key, the first time it is asked for; null every time after. */
-export async function revealWalletKey(email: string): Promise<string | null> {
-  const [row] = await db()<{ encrypted_key: string }[]>`
-    update openrouter_wallets set revealed_at = now()
-     where email = ${email} and revealed_at is null
-    returning encrypted_key`;
-  return row ? decrypt(row.encrypted_key) : null;
 }
 
 /** A key's credit as OpenRouter reports it, in dollars. Null: no limit, or not reported. */
