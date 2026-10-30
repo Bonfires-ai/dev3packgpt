@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     .filter(Boolean);
   return NextResponse.json({
     client_id: `${origin}${CLIENT_METADATA_PATH}`,
-    client_name: 'Solène',
+    client_name: 'Dev3Pack',
     client_uri: origin,
     redirect_uris: [`${origin}${CALLBACK_PATH}`, ...extra],
     grant_types: ['authorization_code'],
