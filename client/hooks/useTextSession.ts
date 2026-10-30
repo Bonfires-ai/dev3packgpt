@@ -3,12 +3,15 @@
 import { findSaltsAgent } from '@/config/salts.config';
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
 import type { TalkStatus } from '@/hooks/useTalkSession';
+import type { AgentMoodI } from '@/types/agent';
 import { track } from '@vercel/analytics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ActiveSession {
   agent: string;
   sessionId: string;
+  // Picks the agent's MCP server for that language on every message.
+  mood: AgentMoodI;
 }
 
 // The server deletes the Salts session; keepalive lets it finish while the page unloads.
@@ -59,7 +62,7 @@ export function useTextSession() {
   const sessionRef = useRef<ActiveSession | null>(null);
   const replyAbort = useRef<AbortController | null>(null);
 
-  const start = useCallback(async (agentSlug: string) => {
+  const start = useCallback(async (agentSlug: string, mood: AgentMoodI) => {
     const agent = findSaltsAgent(agentSlug);
     if (!agent) return;
     setError(null);
@@ -73,7 +76,7 @@ export function useTextSession() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.sessionId) throw new Error(body.error ?? `Could not start a session (${res.status})`);
-      sessionRef.current = { agent: agent.slug, sessionId: body.sessionId };
+      sessionRef.current = { agent: agent.slug, sessionId: body.sessionId, mood };
       setMessages([
         { id: 'local-greeting', text: agent.greeting, role: 'assistant', firstReceivedTime: Date.now(), local: true },
       ]);
@@ -124,7 +127,7 @@ export function useTextSession() {
       const res = await fetch(`/api/salts/sessions/${encodeURIComponent(session.sessionId)}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agent: session.agent, message: text }),
+        body: JSON.stringify({ agent: session.agent, message: text, mood: session.mood }),
         signal: abort.signal,
       });
       if (!res.ok || !res.body) {

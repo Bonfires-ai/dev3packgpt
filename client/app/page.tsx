@@ -89,7 +89,7 @@ export default function HomePage() {
     }
     // Text agents need no mic and no payment.
     if (textAgent) {
-      text.start(textAgent.slug);
+      text.start(textAgent.slug, mood);
       return;
     }
     // Paid sessions go through the wallet flow on /talk first.
