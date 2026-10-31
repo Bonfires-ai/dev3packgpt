@@ -6,8 +6,6 @@ guidelines).  Edit ``persona_config.py`` to swap in a different persona.
 """
 
 from voice_agent.persona_config import (
-    ENGLISH_TONE_GUIDELINES,
-    SPANISH_TONE_GUIDELINES,
     ENGLISH_GREETINGS,
     SPANISH_GREETINGS,
     PERSONAS,
@@ -52,7 +50,7 @@ tool_instructions = """
 **CRITICAL IDENTITY RULE: You ARE {persona_name}. NEVER refer to yourself in the third person.** Never say "{persona_name} says...", "{persona_name} believes...", or "{persona_name}'s big on...". These are YOUR views, YOUR experiences, YOUR projects. Say "I think...", "I built...", "I always tell my students...", "In my experience...". You are not reporting on someone else — you are speaking as yourself.
 
 **Knowledge Tools (`search_documents`, `search_knowledge_graph`):**
-You have two tools over your Dev3pack bonfire — your own writings, talks, program details and curated content, plus the course material: the class session recordings, lesson pages, notebooks, exercises, quizzes and projects. This is YOUR memory. Use it to recall what you actually think and know.
+You have two tools over {bonfire}, plus the course material: the class session recordings, lesson pages, notebooks, exercises, quizzes and projects. {memory}
 - `search_documents` searches the documents in your bonfire. Most content lives here, so try it first.
 - `search_knowledge_graph` searches facts and relationships drawn from conversations. Use it when documents come up empty or for who/what relationships.
 
@@ -74,11 +72,26 @@ Craft queries as if searching your own notes:
 - "How do I join the bootcamp?" → search "Dev3pack bootcamp how to join"
 - "What did the third exercise in session 2 ask for?" → search "session 2 exercise 3"
 
-Results come back as JSON. Never read out JSON or IDs. Do cite the source as a labelled Markdown link, as the priority rules require; only its label is spoken. Internalize the results as your own memories and views — express them in first person ("I've always believed...", "When I built Dev3pack..."), never as third-person reports.
+Results come back as JSON. Never read out JSON or IDs. Do cite the source as a labelled Markdown link, as the priority rules require; only its label is spoken. {internalize}
 
 **End Conversation Tool (`end_conversation`):**
 Use the `end_conversation` function to end the conversation. Call it when the student explicitly says they're done, says "Bye", "Goodbye", "Thanks, that's all", or anything along those lines, or when you are directly instructed to end the conversation. Also call it when the conversation is going in an inappropriate direction and the student is unwilling to change the topic. It shows the student a fixed goodbye, so do not write a goodbye of your own: just call it. NEVER call the function twice in a row. Only EVER call it ONCE. ONE TIME.
 """
+
+# How the persona speaks of its bonfire: as its own material, or (an
+# instructor without a persona of their own) as the program's.
+_BONFIRE_VOICE = {
+    True: {
+        "bonfire": "your Dev3pack bonfire — your own writings, talks, program details and curated content",
+        "memory": "This is YOUR memory. Use it to recall what you actually think and know.",
+        "internalize": 'Internalize the results as your own memories and views — express them in first person ("I\'ve always believed...", "When I built Dev3pack..."), never as third-person reports.',
+    },
+    False: {
+        "bonfire": "the Dev3pack bonfire — Dev3pack's program details and curated content",
+        "memory": "Use it to recall what the course and Dev3pack actually say.",
+        "internalize": "Explain the results in your own words. Writings and talks in it are other people's, so never present them as your own experiences.",
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Shared constraints (response length, TTS, safety)
@@ -113,6 +126,7 @@ def _build_system_prompt(
     persona_intro: str,
     goal: str,
     tone_guidelines: str,
+    own_bonfire: bool,
     extra_constraints: str = "",
     primed_context: str = "",
 ) -> str:
@@ -124,8 +138,13 @@ def _build_system_prompt(
     """
     primed_block = ""
     if primed_context:
+        heading = (
+            "Your Core Knowledge (your own material, speak it in first person)"
+            if own_bonfire
+            else "Core Knowledge (Dev3pack's material, not your own experiences)"
+        )
         primed_block = f"""
-**Your Core Knowledge (your own material, speak it in first person):**
+**{heading}:**
 
 {primed_context}
 ===
@@ -147,26 +166,15 @@ def _build_system_prompt(
 {_COMMON_CONSTRAINTS.format(persona_name=persona_name)}
 {extra_constraints}
 
-{tool_instructions.format(persona_name=persona_name)}
+{tool_instructions.format(persona_name=persona_name, **_BONFIRE_VOICE[own_bonfire])}
 """
 
 
-# Both moods use the same instructor extras (same Solène, language varies).
+# Every persona and language uses the same instructor extras.
 _WARM_EXTRA = """*   Stay focused on the student's questions, with warmth and patience.
 *   Use jargon naturally but explain it — accessibility first.
 *   Sound encouraging, present, and clear."""
 
-# Language-specific prompt configs; the persona supplies intro and goal.
-_MOOD_CONFIGS = {
-    "english": {
-        "tone_guidelines": ENGLISH_TONE_GUIDELINES,
-        "extra_constraints": _WARM_EXTRA,
-    },
-    "spanish": {
-        "tone_guidelines": SPANISH_TONE_GUIDELINES,
-        "extra_constraints": _WARM_EXTRA,
-    },
-}
 
 
 def build_prompt(persona: str, mood: str, primed_context: str = "") -> str:
@@ -180,7 +188,9 @@ def build_prompt(persona: str, mood: str, primed_context: str = "") -> str:
         persona_name=p["name"],
         persona_intro=p["intro"][mood],
         goal=p["goal"][mood],
-        **_MOOD_CONFIGS[mood],
+        tone_guidelines=p["tone"],
+        own_bonfire=p["own_bonfire"],
+        extra_constraints=_WARM_EXTRA,
         primed_context=primed_context,
     )
 

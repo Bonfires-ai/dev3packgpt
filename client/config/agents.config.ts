@@ -39,6 +39,21 @@ const textAgent = (slug: string): HomeAgent => {
 
 export const VOICE_AGENT = 'solene';
 
+// First name, as the voice session's labels and the mic dialog use it.
+export const firstName = (agent: HomeAgent) => agent.name.split(' ')[0];
+
+const instructor = (slug: string, name: string, avatar: string): HomeAgent => {
+  const first = name.split(' ')[0];
+  return {
+    slug,
+    kind: 'voice',
+    name,
+    subtitle: { english: 'Dev3pack Instructor', spanish: 'Instructor de Dev3pack' },
+    startLabel: { english: `Talk with ${first}`, spanish: `Habla con ${first}` },
+    avatar: sameForBoth(avatar),
+  };
+};
+
 // In carousel order; the page starts on Solène.
 export const homeAgents: HomeAgent[] = [
   textAgent('general-assistant'),
@@ -50,16 +65,10 @@ export const homeAgents: HomeAgent[] = [
     startLabel: { english: english.startChatButtonLabel, spanish: spanish.startChatButtonLabel },
     avatar: { english: english.avatarImage, spanish: spanish.avatarImage },
   },
-  {
-    // Placeholder until Fabian has his own voice agent: it starts the same
-    // LiveKit session. One avatar for both languages for now.
-    slug: 'fabian',
-    kind: 'voice',
-    name: 'Fabian Sanchez',
-    subtitle: { english: 'Dev3pack Instructor', spanish: 'Instructor de Dev3pack' },
-    startLabel: { english: 'Talk with Fabian', spanish: 'Habla con Fabian' },
-    avatar: sameForBoth('/avatars/fabian.gif'),
-  },
+  // The other instructors: one avatar for both languages for now.
+  instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif'),
+  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.jpg'),
+  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.jpg'),
 ];
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
@@ -74,8 +83,9 @@ const BONFIRES_MCP: ByMood<string> = { [AgentMoodEnum.ENGLISH]: 'dev3pack', [Age
 
 export const voiceSessions: Record<string, VoiceSession> = {
   [VOICE_AGENT]: { persona: 'solene', mcpServer: BONFIRES_MCP },
-  // Fabian has no persona of his own yet, so he is Solène for now.
-  fabian: { persona: 'solene', mcpServer: BONFIRES_MCP },
+  fabian: { persona: 'fabian', mcpServer: BONFIRES_MCP },
+  deepesh: { persona: 'deepesh', mcpServer: BONFIRES_MCP },
+  santiago: { persona: 'santiago', mcpServer: BONFIRES_MCP },
 };
 
 // The start button on phones: one word by kind, in place of startLabel.

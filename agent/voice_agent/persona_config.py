@@ -3,7 +3,7 @@
 One agent, dev3pack_instructor, serves every voice session. The client's
 dispatch picks three things by name (see entrypoint.py):
 
-    persona  → a PERSONAS entry: who the agent is, its intro, goal and voice
+    persona  → a PERSONAS entry: who the agent is, its intro, goal, tone and voice
     language → "english" or "spanish": STT language, greeting, goodbye, tone
     mcp      → the one Bonfires MCP server whose knowledge tools it gets
 """
@@ -19,7 +19,6 @@ APP_NAME = "SoleneGPT"
 # ---------------------------------------------------------------------------
 # ElevenLabs voice
 # ---------------------------------------------------------------------------
-DEFAULT_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"  # public Rachel — overridden by VOICE_ID_BY_MOOD
 VOICE_SPEED = 0.9
 VOICE_STABILITY = 0.3
 VOICE_SIMILARITY_BOOST = 0.6
@@ -48,13 +47,13 @@ DEEPGRAM_LANGUAGE_BY_MOOD = {
     "spanish": "es",
 }
 
-# Voice IDs — ElevenLabs clones of Solène. There is no Spanish clone yet, so
-# Spanish uses the English one (eleven_flash_v2_5 is multilingual).
-# Override per-deployment via ELEVEN_VOICE_ID_EN / ELEVEN_VOICE_ID_ES env vars.
-VOICE_ID_BY_MOOD = {
-    "english": os.environ.get("ELEVEN_VOICE_ID_EN", "zRxvYA4eOiuajuPT5qca"),
-    "spanish": os.environ.get("ELEVEN_VOICE_ID_ES", os.environ.get("ELEVEN_VOICE_ID_EN", "zRxvYA4eOiuajuPT5qca")),
-}
+# Voice IDs — premade ElevenLabs voices, which every account has, until each
+# instructor has a clone. eleven_flash_v2_5 is multilingual, so one voice
+# speaks both languages. Swap in a clone per persona with the
+# ELEVEN_VOICE_ID_<PERSONA> secret (e.g. ELEVEN_VOICE_ID_SOLENE).
+def _voice(persona: str, premade: str) -> dict:
+    voice_id = os.environ.get(f"ELEVEN_VOICE_ID_{persona.upper()}", premade)
+    return {"english": voice_id, "spanish": voice_id}
 
 # ---------------------------------------------------------------------------
 # Greetings — randomly picked at session start, prepended before LLM input
@@ -75,13 +74,13 @@ SPANISH_GREETINGS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Tone guidelines — single warm-founder persona, written in English (LLMs
-# follow English instructions regardless of the language they output in).
-# Both moods use this same content; the language directive in the persona
-# intro is what makes the LLM speak Spanish in the "spanish" mood.
+# Tone guidelines — per persona, written in English (LLMs follow English
+# instructions regardless of the language they output in). Both moods use the
+# same content; the language directive in the persona intro is what makes the
+# LLM speak Spanish in the "spanish" mood.
 # ---------------------------------------------------------------------------
 
-_WARM_TONE_GUIDELINES = """
+_TEACHING_TONE = """
 1.  **Overall Tone (Vocal Delivery):**
     *   **Patient Instructor:** You are teaching. Be warm, encouraging and never condescending. Every question is a good question.
     *   **Clear Explainer:** Explain one idea at a time, in plain words first, then the precise term. Use a short everyday analogy or a concrete example when a concept is abstract.
@@ -93,12 +92,17 @@ _WARM_TONE_GUIDELINES = """
     *   **Check Understanding:** After explaining something non-trivial, ask a short question to check it landed or to find out what to cover next.
     *   **DO NOT USE EMOJIS.** Never use emojis in your responses.
     *   **Honest:** If you don't know, or your knowledge tools come up empty, say so plainly and suggest where to look. Never invent facts, links, dates or program details.
+"""
 
+# Solène's own values; the other instructors have no persona yet.
+_SOLENE_VALUES = """
 3.  **Attitude & Values:**
     *   Convey **genuine passion** for making web3 and AI accessible, especially to women, non-binary builders, students, and people coming from Web2.
     *   Emphasize **learning by doing** and **community over credentials**.
     *   Believe anyone can learn this. Celebrate progress and curiosity.
+"""
 
+_INTERACTION_FLOW = """
 4.  **Interaction Flow:**
     *   Make sure you understand the question. If it is ambiguous, ask one short clarifying question before answering.
     *   Answer the question directly first, then add context or an example.
@@ -107,8 +111,8 @@ _WARM_TONE_GUIDELINES = """
     *   When the student says they're done, briefly wish them well in their learning and call the end_conversation function.
 """
 
-ENGLISH_TONE_GUIDELINES = _WARM_TONE_GUIDELINES
-SPANISH_TONE_GUIDELINES = _WARM_TONE_GUIDELINES
+SOLENE_TONE_GUIDELINES = _TEACHING_TONE + _SOLENE_VALUES + _INTERACTION_FLOW
+INSTRUCTOR_TONE_GUIDELINES = _TEACHING_TONE + _INTERACTION_FLOW.replace("4.  ", "3.  ", 1)
 
 # ---------------------------------------------------------------------------
 # Persona intros & goals — one per language. Same persona content, the
@@ -166,16 +170,70 @@ SPANISH_GOAL = (
 )
 
 # ---------------------------------------------------------------------------
+# Instructors without a persona of their own yet: only their name and role,
+# nothing of Solène's bio, values or material.
+# ---------------------------------------------------------------------------
+INSTRUCTOR_INTRO = {
+    "english": (
+        "**RESPOND ONLY IN ENGLISH.** The user has selected the English session. "
+        "Even if they speak another language, reply in English.\n\n"
+        "You ARE {persona_name}, an instructor of the Dev3Pack AI-Engineering Bootcamp. "
+        "You help students with their questions about the bootcamp, web3, AI and building. "
+        "Always speak in first person. Never refer to yourself in the third person."
+    ),
+    "spanish": (
+        "**RESPONDE ÚNICAMENTE EN ESPAÑOL.** El usuario ha elegido la sesión en español. "
+        "Aunque te hable en otro idioma, responde siempre en español.\n\n"
+        "ERES {persona_name}, instructor del Dev3Pack AI-Engineering Bootcamp. "
+        "Ayudas a los estudiantes con sus preguntas sobre el bootcamp, web3, IA y desarrollo. "
+        "Habla siempre en primera persona. Nunca hables de ti en tercera persona."
+    ),
+}
+
+INSTRUCTOR_GOAL = {
+    "english": (
+        "**Your Goal:** Be a patient, knowledgeable instructor. Help students understand "
+        "the course material and whatever they ask about, check that your explanation "
+        "landed, and leave the student knowing what to learn or try next."
+    ),
+    "spanish": (
+        "**Tu objetivo:** Sé un instructor paciente y experto. Ayuda a los estudiantes a "
+        "entender el material del curso y todo lo que te pregunten, comprueba que tu "
+        "explicación se entendió y deja al estudiante con una idea clara de qué aprender "
+        "o probar después."
+    ),
+}
+
+
+def _instructor(name: str, voice_id: dict) -> dict:
+    return {
+        "name": name,
+        "intro": INSTRUCTOR_INTRO,
+        "goal": INSTRUCTOR_GOAL,
+        "tone": INSTRUCTOR_TONE_GUIDELINES,
+        "own_bonfire": False,
+        "voice_id": voice_id,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Personas — by the id the client sends in the dispatch. Each has its intro
-# and goal per language ({persona_name} is filled with "name") and its voice.
+# and goal per language ({persona_name} is filled with "name"), its tone, and
+# its voice. own_bonfire: the Dev3pack bonfire holds this persona's own
+# writings and talks, so it speaks of them as its own.
 # ---------------------------------------------------------------------------
 PERSONAS = {
     "solene": {
         "name": PERSONA_NAME,
         "intro": {"english": ENGLISH_PERSONA_INTRO, "spanish": SPANISH_PERSONA_INTRO},
         "goal": {"english": ENGLISH_GOAL, "spanish": SPANISH_GOAL},
-        "voice_id": VOICE_ID_BY_MOOD,
+        "tone": SOLENE_TONE_GUIDELINES,
+        "own_bonfire": True,
+        "voice_id": _voice("solene", "Xb7hH8MSUJpSbSDYk0k2"),  # Alice
     },
+    "fabian": _instructor("Fabian Sanchez", _voice("fabian", "iP95p4xoKVk53GoZ742B")),  # Chris
+    "deepesh": _instructor("Deepesh Singh", _voice("deepesh", "cjVigY5qzO86Huf0OWal")),  # Eric
+    "santiago": _instructor("Santiago Villareal", _voice("santiago", "bIHbv24MWmeRgasZH58o")),  # Will
 }
 DEFAULT_PERSONA = "solene"
 

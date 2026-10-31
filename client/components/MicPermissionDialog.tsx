@@ -22,11 +22,13 @@ export async function micPermission(): Promise<PermissionState | 'unknown'> {
  */
 export function MicPermissionDialog({
   mood,
+  agentName,
   initialState,
   onGranted,
   onClose,
 }: {
   mood: AgentMoodI;
+  agentName: string;
   initialState: MicDialogState;
   onGranted: () => void;
   onClose: () => void;
@@ -67,7 +69,11 @@ export function MicPermissionDialog({
         role={failed ? 'alert' : undefined}
         className={clsx('mt-2 text-sm', failed ? 'text-[#DC2626]' : 'text-[#5C686D]')}
       >
-        {state === 'blocked' ? text.blocked : state === 'missing' ? text.missing : text.body}
+        {state === 'blocked'
+          ? text.blocked
+          : state === 'missing'
+            ? text.missing
+            : text.body.replace('{name}', agentName)}
       </p>
       <div className="mt-6 flex justify-end gap-2">
         <button

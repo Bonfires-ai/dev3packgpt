@@ -10,7 +10,7 @@ import { MicDialogState, MicPermissionDialog, micPermission } from '@/components
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { HomeAgent, VOICE_AGENT, firstName, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -104,7 +104,7 @@ export default function HomePage() {
   };
 
   if (room && (status === 'connected' || status === 'ended')) {
-    return <ChatRoom room={room} mood={mood} ended={status === 'ended'} onRestart={reset} />;
+    return <ChatRoom room={room} agent={homeAgent} mood={mood} ended={status === 'ended'} onRestart={reset} />;
   }
 
   if (textAgent && (text.status === 'connected' || text.status === 'ended')) {
@@ -311,6 +311,7 @@ export default function HomePage() {
       {micDialog && (
         <MicPermissionDialog
           mood={mood}
+          agentName={firstName(homeAgent)}
           initialState={micDialog}
           onClose={() => setMicDialog(null)}
           onGranted={() => {

@@ -3,8 +3,8 @@
 import { ChatRoom } from '@/components/ChatRoom';
 import LoadingPage from '@/components/LoadingPage';
 import { PaymentGate } from '@/components/PaymentGate';
+import { VOICE_AGENT, findHomeAgent } from '@/config/agents.config';
 import { useAuth } from '@/hooks/useAuth';
-import { VOICE_AGENT } from '@/config/agents.config';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -45,7 +45,15 @@ const TalkComponent = () => {
   if (!mood) return <></>;
 
   if (room && (status === 'connected' || status === 'ended')) {
-    return <ChatRoom room={room} mood={mood} ended={status === 'ended'} onRestart={() => router.push('/')} />;
+    return (
+      <ChatRoom
+        room={room}
+        agent={findHomeAgent(agent) ?? findHomeAgent(VOICE_AGENT)!}
+        mood={mood}
+        ended={status === 'ended'}
+        onRestart={() => router.push('/')}
+      />
+    );
   }
 
   if (error) {

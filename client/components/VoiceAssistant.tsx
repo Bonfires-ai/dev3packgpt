@@ -4,6 +4,7 @@ import { SessionEndCard } from '@/components/SessionEndCard';
 import TranscriptionView from '@/components/TranscriptionView';
 import { MicIcon } from '@/components/icons/MicIcon';
 import { PhoneDownIcon } from '@/components/icons/PhoneDownIcon';
+import { HomeAgent, firstName } from '@/config/agents.config';
 import { personaConfig } from '@/config/persona.config';
 import useCombinedTranscriptions, { type Transcription } from '@/hooks/useCombinedTranscriptions';
 import useLocalMicTrack from '@/hooks/useLocalMicTrack';
@@ -28,10 +29,12 @@ import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 const END_FALLBACK_MS = 5000;
 
 export function VoiceAssistant({
+  agent,
   mood,
   ended,
   onRestart,
 }: {
+  agent: HomeAgent;
   mood: AgentMoodI;
   ended?: boolean;
   onRestart: () => void;
@@ -43,6 +46,8 @@ export function VoiceAssistant({
   const moodKey = mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english';
   const moodConfig = personaConfig.moods[moodKey];
   const accent = moodConfig.visualizerBgColor;
+  const name = firstName(agent);
+  const withName = (label: string) => label.replace('{name}', name);
 
   const [ending, setEnding] = useState(false);
 
@@ -109,9 +114,9 @@ export function VoiceAssistant({
     downloadTranscript({
       messages: combinedTranscriptions,
       mood,
-      agentName: personaConfig.appName,
-      title: moodConfig.endCard.transcriptTitle,
-      filePrefix: 'solene-session',
+      agentName: name,
+      title: withName(moodConfig.endCard.transcriptTitle),
+      filePrefix: `${agent.slug}-session`,
     });
 
   const inSession = !ended && !ending;
@@ -142,6 +147,7 @@ export function VoiceAssistant({
                 onRestart={onRestart}
                 onSave={handleSaveSession}
                 canSave={combinedTranscriptions.length > 0}
+                agentName={name}
               />
             )
           }
@@ -149,8 +155,8 @@ export function VoiceAssistant({
             // Scrolls with the messages, so a long chat isn't pinned under it.
             <div className="flex justify-center pt-8">
               <Image
-                src={moodConfig.avatarImage}
-                alt={`${moodConfig.label} Avatar`}
+                src={agent.avatar?.[mood] ?? moodConfig.avatarImage}
+                alt={`${agent.name} Avatar`}
                 width={254}
                 height={254}
                 className="rounded-none md:w-[254px] md:h-[254px] w-[200px] h-[200px]"
@@ -214,7 +220,7 @@ export function VoiceAssistant({
                 <PhoneDownIcon />
               </button>
               <RingButton
-                label={agentMuted ? moodConfig.unmuteLabel : moodConfig.muteLabel}
+                label={withName(agentMuted ? moodConfig.unmuteLabel : moodConfig.muteLabel)}
                 pressed={agentMuted}
                 onClick={handleToggleMute}
                 disabled={!inSession}

@@ -37,7 +37,6 @@ from voice_agent.assistant import Assistant, end_session, prewarm
 from voice_agent import bonfires
 from voice_agent.constants import (
     build_prompt,
-    ELEVENLABS_DEFAULT_VOICE_ID,
     TIMEOUT_WARNING_TIME,
     TIMEOUT_SECONDS,
     mood_greeting,
@@ -246,7 +245,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     # Create the Agent session with STT/LLM/TTS building blocks
     # ------------------------------------------------------------------
     deepgram_language = DEEPGRAM_LANGUAGE_BY_MOOD[mood]
-    voice_id = PERSONAS[persona]["voice_id"].get(mood) or os.environ.get("ELEVEN_VOICE_ID", ELEVENLABS_DEFAULT_VOICE_ID)
+    voice_id = PERSONAS[persona]["voice_id"][mood]
     logger.info("STT language=%s, voice_id=%s (mood=%s)", deepgram_language, voice_id, mood)
 
     # Deepgram nova-3 `keyterms` are English-only. Skip them for other languages
@@ -266,7 +265,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     if deepgram_language.startswith("en"):
         stt_kwargs["keyterm"] = stt_words
 
-    # ElevenLabs carries the cloned Solène voices. Without an ElevenLabs key,
+    # ElevenLabs carries each persona's voice. Without an ElevenLabs key,
     # fall back to OpenRouter TTS (stock voice) on the member's key, as the LLM.
     if os.environ.get("ELEVEN_API_KEY"):
         session_tts = elevenlabs.TTS(

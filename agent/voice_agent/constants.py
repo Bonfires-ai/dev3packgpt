@@ -9,7 +9,6 @@ from voice_agent.persona_config import (
     TIMEOUT_SECONDS,
     TIMEOUT_WARNING_TIME,
     SPEAK_DELAY,
-    DEFAULT_VOICE_ID as ELEVENLABS_DEFAULT_VOICE_ID,
 )
 
 mood_initial_prompts = {

@@ -46,14 +46,14 @@ export const SessionEndCard = forwardRef<
     // The post links to /share, whose preview on X is this card. Phones also
     // attach the card image itself through the system share sheet.
     const handleShare = async () => {
-      const text = `${card.shareText} ${window.location.origin}/share?lang=${mood}`;
+      const text = `${card.shareText.replace('{name}', agentName)} ${window.location.origin}/share?lang=${mood}`;
       const openPost = () =>
         window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 
       if (typeof navigator.canShare === 'function' && window.matchMedia('(pointer: coarse)').matches) {
         try {
           const image = await renderSessionCard({
-            label: personaConfig.appName,
+            label: agentName,
             motif: card.motif,
             title: card.title,
             fonts: { display: drukCondSuper.style.fontFamily, mono: inconsolata.style.fontFamily },

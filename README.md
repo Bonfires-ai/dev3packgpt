@@ -62,7 +62,7 @@ LiveKit room
 cd agent
 cp .env.example .env
 # Fill in: LIVEKIT_*, DEEPGRAM_API_KEY, ELEVEN_API_KEY,
-#          ELEVEN_VOICE_ID_EN, ELEVEN_VOICE_ID_FR
+#          ELEVEN_VOICE_ID_<PERSONA> (optional)
 make install
 make download-files
 ```
@@ -108,7 +108,7 @@ Open [http://localhost:3000](http://localhost:3000), pick a language, hit Connec
 | `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` / `LIVEKIT_URL` | LiveKit Cloud project credentials |
 | `DEEPGRAM_API_KEY` | Speech-to-text (per-language: en-US for English mode, es for Spanish mode) |
 | `ELEVEN_API_KEY` | Text-to-speech |
-| `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` | ElevenLabs voice clones for each language |
+| `ELEVEN_VOICE_ID_<PERSONA>` | Optional ElevenLabs voice clone for a persona (e.g. `ELEVEN_VOICE_ID_SOLENE`), in place of its premade voice |
 | `LIVEKIT_AGENT_NAME` | Optional, default `dev3pack_instructor`. The agent only joins rooms the client dispatches it to, with the signed-in member's OpenRouter key; it has no key of its own. LLM is `z-ai/glm-5.3` by default (override with `LLM_MODEL`) |
 
 **Client (`client/.env.local`)**
@@ -139,7 +139,7 @@ Set `NEXT_PUBLIC_DISABLE_X402=true` to bypass x402 entirely. The payment gate be
 
 ### Voice clones
 
-The bundled voice IDs (`zRxvYA4eOiuajuPT5qca` EN, `O307ppei2t9uyQERBUcD` FR) point at Solène-flavored clones in a specific ElevenLabs account. To use your own, follow [ElevenLabs' voice cloning guide](https://elevenlabs.io/blog/how-to-clone-voice) and set `ELEVEN_VOICE_ID_EN` / `ELEVEN_VOICE_ID_FR` in `agent/.env`.
+Each persona in `agent/voice_agent/persona_config.py` speaks with a premade ElevenLabs voice, which every account has, in both languages. To give one its own clone, follow [ElevenLabs' voice cloning guide](https://elevenlabs.io/blog/how-to-clone-voice) and set `ELEVEN_VOICE_ID_<PERSONA>` (e.g. `ELEVEN_VOICE_ID_SOLENE`) in `agent/.env` or the agent's secrets.
 
 Voice prosody knobs live in [`agent/voice_agent/persona_config.py`](agent/voice_agent/persona_config.py): `VOICE_SPEED`, `VOICE_STABILITY`, `VOICE_SIMILARITY_BOOST`, `VOICE_STYLE`. Lower stability = more expressive (better punctuation pauses). Default is tuned for warm-mentor delivery.
 
