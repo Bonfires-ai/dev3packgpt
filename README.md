@@ -83,6 +83,16 @@ node scripts/x402-setup.mjs
 # https://faucet.circle.com (pick Solana, paste your Phantom address)
 ```
 
+A top-up that was paid on chain but never credited (the server gave up before
+the transaction confirmed) can be credited by hand from its signature. It checks
+the payment first and writes nothing without `--apply`:
+
+```sh
+cd client
+vercel env pull .env.production.local --environment=production
+node --env-file=.env.production.local scripts/credit-topup.mjs <tx_hash> <member email> --apply
+```
+
 ### Running
 
 ```sh
