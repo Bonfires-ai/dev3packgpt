@@ -195,6 +195,3 @@ build/
 
 # ignore all ai generated files in the agent directory
 agent/*.png
-
-# Internal ops scripts, kept out of the handover
-client/scripts/credit-topup.mjs
