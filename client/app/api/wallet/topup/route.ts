@@ -8,6 +8,8 @@ import { type PaymentResource, X402_VERSION } from '@/lib/x402/spec';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+// Settling waits until the payment's blockhash expires (~90s on mainnet).
+export const maxDuration = 120;
 
 // Buy OpenRouter credit with x402: POST { pack } answers 402 with what to pay, then
 // the same POST with an X-PAYMENT header settles it and raises the member's key

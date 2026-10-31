@@ -8,7 +8,7 @@ import { FacilitatorClient } from './types';
  * In-process x402 facilitator backed by a single Solana keypair.
  *
  * Operational requirements: the keypair must hold enough SOL to pay tx fees
- * for every settled payment (~0.000005 SOL per tx, free on devnet via faucet).
+ * for every settled payment (~0.000005 SOL per tx plus the payer's priority fee).
  *
  * Construction:
  *   new SelfHostedFacilitator(rpcUrl, base58SecretKey)
@@ -98,6 +98,36 @@ export class SelfHostedFacilitator implements FacilitatorClient {
     }
   }
 
+  /** True once the transaction is confirmed; throws if it landed and failed. */
+  private async landed(sig: string): Promise<boolean> {
+    const { value } = await this.connection.getSignatureStatuses([sig], { searchTransactionHistory: true });
+    const status = value[0];
+    if (status?.err) throw new Error(`transaction ${sig} failed: ${JSON.stringify(status.err)}`);
+    return status?.confirmationStatus === 'confirmed' || status?.confirmationStatus === 'finalized';
+  }
+
+  /**
+   * Waits for the transaction until its blockhash expires, resending it every
+   * few seconds. Busy mainnet slots can take well over the 30s that
+   * confirmTransaction(sig) waits, and a payment that lands after we gave up
+   * would be taken without being credited.
+   */
+  private async confirm(sig: string, rawTx: Uint8Array, blockhash: string): Promise<void> {
+    for (let attempt = 0; ; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (await this.landed(sig)) return;
+      if (attempt % 3 === 2) {
+        const { value: valid } = await this.connection.isBlockhashValid(blockhash, { commitment: 'confirmed' });
+        // One last look: it may have landed in the final slots.
+        if (!valid) {
+          if (await this.landed(sig)) return;
+          throw new Error(`transaction ${sig} expired before it was confirmed`);
+        }
+        await this.connection.sendRawTransaction(rawTx, { skipPreflight: true, maxRetries: 0 }).catch(() => undefined);
+      }
+    }
+  }
+
   async settle(payment: PaymentPayload, req: PaymentRequirements): Promise<SettleResult> {
     try {
       const txBytes = Buffer.from(payment.payload.transaction, 'base64');
@@ -107,11 +137,13 @@ export class SelfHostedFacilitator implements FacilitatorClient {
       tx.sign([this.facilitatorKey]);
 
       const rawTx = tx.serialize();
-      const sig = await this.connection.sendRawTransaction(rawTx, { skipPreflight: false });
-
-      // Poll-based confirmation (deprecated form, but still works and avoids
-      // needing lastValidBlockHeight which is not on the deserialized tx).
-      await this.connection.confirmTransaction(sig, 'confirmed');
+      // The fee payer's signature is the transaction id, and it is the same
+      // every time this payment is signed, so a retry finds one that landed.
+      const sig = bs58.encode(tx.signatures[0]);
+      if (!(await this.landed(sig))) {
+        await this.connection.sendRawTransaction(rawTx, { skipPreflight: false, maxRetries: 0 });
+        await this.confirm(sig, rawTx, tx.message.recentBlockhash);
+      }
 
       return {
         success: true,

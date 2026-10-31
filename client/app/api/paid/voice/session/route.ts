@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
+// Settling waits until the payment's blockhash expires (~90s on mainnet).
+export const maxDuration = 120;
 export const revalidate = 0;
 
 const SESSION_TTL_SECONDS = 600;
