@@ -1,4 +1,5 @@
 import { AgentAudioVisualizerRadial } from '@/components/AgentAudioVisualizerRadial';
+import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
 import { NoAgentNotification } from '@/components/NoAgentNotification';
 import { SessionEndCard } from '@/components/SessionEndCard';
 import TranscriptionView from '@/components/TranscriptionView';
@@ -71,6 +72,27 @@ export function VoiceAssistant({
     source: Track.Source.Microphone,
   });
 
+  // The room opens with the mic off, so text chat works without one. Unmuting
+  // asks for the mic first unless access is already granted; a blocked or
+  // missing mic shows in the dialog, and the user can keep typing.
+  const [micDialog, setMicDialog] = useState<MicDialogState | null>(null);
+
+  const enableMic = async () => {
+    try {
+      await room.localParticipant.setMicrophoneEnabled(true);
+    } catch (err) {
+      console.error('Could not turn on the microphone', err);
+      setMicDialog(err instanceof Error && err.name === 'NotFoundError' ? 'missing' : 'blocked');
+    }
+  };
+
+  const handleMicClick = async () => {
+    if (micEnabled) return toggleMic(false);
+    const permission = await micPermission();
+    if (permission === 'granted') enableMic();
+    else setMicDialog(permission === 'denied' ? 'blocked' : 'ask');
+  };
+
   const combinedTranscriptions = useCombinedTranscriptions(localMessages);
 
   // Bring the end card into view when the session ends.
@@ -125,6 +147,16 @@ export function VoiceAssistant({
     // Header, scrolling messages and input stack as three rows, so the input
     // never covers the messages and the messages get all the spare height.
     <div className="fixed inset-0 flex flex-col bg-[#F5F5F5]">
+      {/* Leaves at once: no goodbye, no end card. */}
+      <button
+        type="button"
+        onClick={onRestart}
+        aria-label={moodConfig.backLabel}
+        title={moodConfig.backLabel}
+        className="absolute left-4 top-8 z-10 h-11 w-11 rounded-full bg-white text-[#273339] flex items-center justify-center shadow-md transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#A15EED]"
+      >
+        <BackIcon />
+      </button>
       <div
         className="absolute inset-0 pointer-events-none -z-10"
         style={{
@@ -168,6 +200,18 @@ export function VoiceAssistant({
       </div>
 
       <RoomAudioRenderer muted={agentMuted} />
+      {micDialog && (
+        <MicPermissionDialog
+          mood={mood}
+          agentName={name}
+          initialState={micDialog}
+          onClose={() => setMicDialog(null)}
+          onGranted={() => {
+            setMicDialog(null);
+            enableMic();
+          }}
+        />
+      )}
       <NoAgentNotification state={agentState} />
 
       <footer className={clsx('shrink-0 px-4', !ended && 'pb-5 pt-2')}>
@@ -201,7 +245,7 @@ export function VoiceAssistant({
               <RingButton
                 label={micEnabled ? moodConfig.micMuteLabel : moodConfig.micUnmuteLabel}
                 pressed={!micEnabled}
-                onClick={() => toggleMic()}
+                onClick={handleMicClick}
                 disabled={micPending || !inSession}
                 state={ringState(!micEnabled, userSpeaking ? 'speaking' : 'listening')}
                 audioTrack={micTrackRef}
@@ -311,6 +355,12 @@ const MicOffIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+  </svg>
+);
+
+const BackIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 

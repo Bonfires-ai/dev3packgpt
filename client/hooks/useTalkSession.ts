@@ -26,18 +26,14 @@ async function fetchFreeSessionToken(): Promise<string> {
   return body.session_token;
 }
 
-// Short, plain messages for the UI; the raw error goes to the console.
-function friendlyError(err: unknown): string {
-  const name = err instanceof Error ? err.name : '';
-  if (name === 'NotAllowedError') return 'Microphone access is blocked.';
-  if (name === 'NotFoundError') return 'No microphone found.';
-  return "Couldn't start the session. Please try again.";
-}
+// A short, plain message for the UI; the raw error goes to the console.
+const START_ERROR = "Couldn't start the session. Please try again.";
 
 /**
- * Owns one LiveKit room per session: start() fetches the connection details,
- * connects and turns the mic on; the status stays 'connecting' until all of
- * that is done, so callers show a single loading state.
+ * Owns one LiveKit room per session: start() fetches the connection details
+ * and connects, with the mic off until the user unmutes it in the room; the
+ * status stays 'connecting' until that is done, so callers show a single
+ * loading state.
  */
 export function useTalkSession() {
   const [room, setRoom] = useState<Room | null>(null);
@@ -54,10 +50,8 @@ export function useTalkSession() {
     roomRef.current = newRoom;
     let roomId: string | undefined;
 
-    newRoom.on(RoomEvent.MediaDevicesError, err => {
-      console.error(err);
-      setError(friendlyError(err));
-    });
+    // The room's mic button asks again and explains a blocked or missing mic.
+    newRoom.on(RoomEvent.MediaDevicesError, err => console.error(err));
     // However the session ends (agent hangs up, network drop), show the end card.
     newRoom.on(RoomEvent.Disconnected, () => {
       newRoom.removeAllListeners();
@@ -92,7 +86,6 @@ export function useTalkSession() {
       });
 
       await newRoom.connect(details.serverUrl, details.participantToken);
-      await newRoom.localParticipant.setMicrophoneEnabled(true);
       await newRoom.startAudio().catch(() => undefined);
 
       setRoom(newRoom);
@@ -102,7 +95,7 @@ export function useTalkSession() {
       newRoom.removeAllListeners();
       newRoom.disconnect();
       roomRef.current = null;
-      setError(friendlyError(err));
+      setError(START_ERROR);
       setStatus('idle');
     }
   }, []);

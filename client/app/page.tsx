@@ -6,11 +6,10 @@ import { BuyCreditsButton } from '@/components/BuyCreditsButton';
 import { BuyCreditsDialog } from '@/components/BuyCreditsDialog';
 import { ChatRoom } from '@/components/ChatRoom';
 import { LanguageSelect } from '@/components/LanguageSelect';
-import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { HomeAgent, VOICE_AGENT, firstName, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -56,7 +55,6 @@ export default function HomePage() {
   const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
-  const [micDialog, setMicDialog] = useState<MicDialogState | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
 
@@ -97,10 +95,8 @@ export default function HomePage() {
       router.push(`/talk?mood=${mood}&agent=${agent}`);
       return;
     }
-    // Ask for the mic in our own dialog first, unless access is already granted.
-    const permission = await micPermission();
-    if (permission === 'granted') start(mood, agent);
-    else setMicDialog(permission === 'denied' ? 'blocked' : 'ask');
+    // The room opens with the mic off; it asks for the mic when unmuted.
+    start(mood, agent);
   };
 
   if (room && (status === 'connected' || status === 'ended')) {
@@ -307,19 +303,6 @@ export default function HomePage() {
       )}
 
       {buyCreditsOpen && <BuyCreditsDialog onPaid={wallet.setCredit} onClose={() => setBuyCreditsOpen(false)} />}
-
-      {micDialog && (
-        <MicPermissionDialog
-          mood={mood}
-          agentName={firstName(homeAgent)}
-          initialState={micDialog}
-          onClose={() => setMicDialog(null)}
-          onGranted={() => {
-            setMicDialog(null);
-            start(mood, agent);
-          }}
-        />
-      )}
 
       {/* Prefetch avatar images for faster loading */}
       <link rel="prefetch" href={personaConfig.moods.english.avatarImage} as="image" type="image/gif" />

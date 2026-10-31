@@ -67,6 +67,7 @@ export const personaConfig = {
       micMuteLabel: 'Mute your microphone',
       micUnmuteLabel: 'Unmute your microphone',
       endCallLabel: 'End call',
+      backLabel: 'Back',
       // {name} is the agent's first name where it appears.
       textStartLabel: 'Start chatting',
       textPlaceholder: 'Message {name}',
@@ -125,6 +126,7 @@ export const personaConfig = {
       micMuteLabel: 'Silenciar tu micrófono',
       micUnmuteLabel: 'Activar tu micrófono',
       endCallLabel: 'Terminar llamada',
+      backLabel: 'Volver',
       textStartLabel: 'Empezar a chatear',
       textPlaceholder: 'Escribe a {name}',
       endChatLabel: 'Terminar el chat',

@@ -17,8 +17,8 @@ export async function micPermission(): Promise<PermissionState | 'unknown'> {
 }
 
 /**
- * Asks for the microphone before a session starts. Only opened when access
- * isn't granted yet; shows a blocked or missing mic right here.
+ * Asks for the microphone when the user unmutes in a voice room. Only opened
+ * when access isn't granted yet; shows a blocked or missing mic right here.
  */
 export function MicPermissionDialog({
   mood,

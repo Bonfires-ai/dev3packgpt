@@ -20,7 +20,7 @@ const TalkComponent = () => {
   const mood = parseMoodQueryParam(searchParams.get('mood'));
   const agent = searchParams.get('agent') ?? VOICE_AGENT;
   const router = useRouter();
-  const { room, status, error, start } = useTalkSession();
+  const { room, status, error, start, reset } = useTalkSession();
   const { loading: authLoading, signedIn, signIn } = useAuth();
   const started = useRef(false);
 
@@ -51,7 +51,11 @@ const TalkComponent = () => {
         agent={findHomeAgent(agent) ?? findHomeAgent(VOICE_AGENT)!}
         mood={mood}
         ended={status === 'ended'}
-        onRestart={() => router.push('/')}
+        // Leave the room before going home, so its end card never flashes.
+        onRestart={() => {
+          reset();
+          router.push('/');
+        }}
       />
     );
   }
