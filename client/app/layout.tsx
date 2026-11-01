@@ -1,3 +1,4 @@
+import PopupHandoff from '@/components/PopupHandoff';
 import { personaConfig } from '@/config/persona.config';
 import SolanaWalletContextProvider from '@/context/SolanaWalletContext';
 import '@livekit/components-styles';
@@ -48,6 +49,7 @@ export default function RootLayout({
     <html lang="en" className={'h-full'}>
       <body className={clsx('h-full', inter.variable)}>
         <SolanaWalletContextProvider>{children}</SolanaWalletContextProvider>
+        <PopupHandoff />
         <Analytics />
       </body>
     </html>

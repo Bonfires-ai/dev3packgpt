@@ -20,6 +20,11 @@ export function SignInDialog({
   const ref = useRef<HTMLDialogElement>(null);
   const [redirecting, setRedirecting] = useState(false);
 
+  // A sign-in that failed (or whose popup was blocked) leaves the button usable again.
+  useEffect(() => {
+    if (error) setRedirecting(false);
+  }, [error]);
+
   useEffect(() => {
     ref.current?.showModal();
   }, []);

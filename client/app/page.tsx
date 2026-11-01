@@ -56,6 +56,10 @@ export default function HomePage() {
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
   const [signInOpen, setSignInOpen] = useState(false);
+  // Embedded sign-in finishes in a popup, so the page never reloads: close the dialog once signed in.
+  useEffect(() => {
+    if (auth.signedIn) setSignInOpen(false);
+  }, [auth.signedIn]);
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
 
   // A failed sign-in comes back here; reopen the dialog to say why.

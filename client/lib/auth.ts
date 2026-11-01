@@ -11,7 +11,7 @@
 // Salts accepts it on the member's own agent sessions (see lib/salts.ts); it is kept,
 // with its refresh token, by lib/salts-tokens.ts.
 import { SignJWT, decodeJwt, jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { createHash, randomBytes } from 'node:crypto';
 
@@ -218,9 +218,20 @@ export const flowCookie = (value: string) => ({ name: FLOW_COOKIE, value, ...coo
 export const FLOW_COOKIE_NAME = FLOW_COOKIE;
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
 
-/** The signed-in user from the session cookie, without the fleet check. */
+/**
+ * The session JWT: the cookie, or an `Authorization: Bearer` header. The header is
+ * for the embedded widget, whose iframe is cross-site and so never gets the cookie.
+ */
+export function sessionToken(): string | undefined {
+  const bearer = headers()
+    .get('authorization')
+    ?.match(/^Bearer\s+(.+)$/i)?.[1];
+  return bearer ?? cookies().get(SESSION_COOKIE)?.value;
+}
+
+/** The signed-in user from the session, without the fleet check. */
 export async function currentUser(): Promise<Profile | null> {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const token = sessionToken();
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret(), { algorithms: ['HS256'] });
@@ -268,4 +279,26 @@ export async function fleetAgents(email: string): Promise<FleetAgent[]> {
   verdicts.forEach((v, k) => v.until <= now && verdicts.delete(k));
   verdicts.set(email, { agents, until: now + VERDICT_TTL });
   return agents;
+}
+
+export const POPUP_COOKIE_NAME = 'solene_popup';
+
+/**
+ * The response for the embedded widget's sign-in popup: a page that posts the session
+ * token to the iframe that opened the popup (same origin) and closes itself.
+ */
+export function popupHandoff(token: string | undefined, error?: string) {
+  const message = JSON.stringify({
+    type: 'solene-auth',
+    token: token ?? null,
+    error: token ? null : (error ?? 'failed'),
+  });
+  const html = `<!doctype html><meta charset="utf-8"><title>Signing in…</title><p style="font-family:sans-serif;padding:24px">Signed in. You can close this window.</p><script>
+try{window.opener&&window.opener.postMessage(${message.replace(/</g, '\\u003c')},location.origin)}catch(e){}
+window.close()</script>`;
+  const res = new NextResponse(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+  res.cookies.delete(POPUP_COOKIE_NAME);
+  return res;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import type { ConnectionDetails } from '@/app/api/connection-details/route';
+import { apiFetch } from '@/lib/api-fetch';
 import type { AgentMoodI } from '@/types/agent';
 import { track } from '@vercel/analytics';
 import { Room, RoomEvent } from 'livekit-client';
@@ -67,7 +68,7 @@ export function useTalkSession() {
         process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details',
         window.location.origin
       );
-      const response = await fetch(`${url.toString()}?${params.toString()}`);
+      const response = await apiFetch(`${url.toString()}?${params.toString()}`);
       if (!response.ok) {
         const body = await response.json().catch(() => ({ error: response.statusText }));
         throw new Error(body.detail || body.error || `Connection failed (${response.status})`);

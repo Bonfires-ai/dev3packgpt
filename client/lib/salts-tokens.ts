@@ -42,7 +42,10 @@ export async function saltsAccessToken(email: string): Promise<string | null> {
     const [row] = await sql<Row[]>`
       select client_id, encrypted_access, encrypted_refresh, expires_at
         from salts_oauth_tokens where email = ${email}`;
-    if (!row) return null;
+    if (!row) {
+      console.warn(`salts tokens: none saved for ${email}`);
+      return null;
+    }
     if (row.expires_at.getTime() - Date.now() > EXPIRY_MARGIN_MS) return decrypt(row.encrypted_access);
     if (!row.encrypted_refresh) return null;
 
@@ -52,6 +55,7 @@ export async function saltsAccessToken(email: string): Promise<string | null> {
       client_id: row.client_id,
     });
     if (!res.ok) {
+      console.warn(`salts tokens: refresh refused ${res.status}`, await res.clone().text().catch(() => ''));
       // A refused refresh token is spent or revoked; an outage is not, so keep it then.
       if (res.status >= 400 && res.status < 500) {
         await sql`delete from salts_oauth_tokens where email = ${email}`;

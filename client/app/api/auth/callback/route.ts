@@ -1,4 +1,14 @@
-import { FLOW_COOKIE_NAME, completeLogin, publicOrigin, sessionCookie, signSession } from '@/lib/auth';
+import {
+  FLOW_COOKIE_NAME,
+  POPUP_COOKIE_NAME,
+  SESSION_COOKIE_NAME,
+  completeLogin,
+  currentUser,
+  popupHandoff,
+  publicOrigin,
+  sessionCookie,
+  signSession,
+} from '@/lib/auth';
 import { saveSaltsTokens } from '@/lib/salts-tokens';
 import { ensureWalletKey } from '@/lib/wallet';
 import { cookies } from 'next/headers';
@@ -24,6 +34,20 @@ export async function GET(request: Request) {
     await saveSaltsTokens(result.profile.email, result.tokens).catch(err =>
       console.error('saving salts tokens failed', err)
     );
+  }
+
+  // Sign-in popup of the embedded widget: answer with a tiny page that hands the token
+  // to the iframe and closes, instead of loading the app in the popup first.
+  if (cookies().get(POPUP_COOKIE_NAME)?.value) {
+    const token = result.ok
+      ? await signSession(result.profile)
+      : (await currentUser()) // a repeated callback: the first one already signed in
+        ? cookies().get(SESSION_COOKIE_NAME)?.value
+        : undefined;
+    const page = popupHandoff(token, result.ok ? undefined : result.error);
+    if (result.ok && token) page.cookies.set(sessionCookie(token));
+    page.cookies.delete(FLOW_COOKIE_NAME);
+    return page;
   }
 
   const target = new URL(result.returnTo, origin);

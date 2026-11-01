@@ -1,3 +1,4 @@
+import { apiFetch } from '@/lib/api-fetch';
 import type { WalletContextState } from '@solana/wallet-adapter-react';
 import type { Connection } from '@solana/web3.js';
 import { encodeXPaymentHeader } from './header';
@@ -19,7 +20,7 @@ export async function payWithX402<T>(
 ): Promise<T> {
   const init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 
-  const probe = await fetch(url, init);
+  const probe = await apiFetch(url, init);
   if (probe.status !== 402) throw new Error(await errorOf(probe));
   const required = (await probe.json()) as PaymentRequiredBody;
   const requirements = required.accepts?.[0];
@@ -34,7 +35,7 @@ export async function payWithX402<T>(
     payload: { transaction },
   });
 
-  const paid = await fetch(url, { ...init, headers: { ...init.headers, 'X-PAYMENT': xPayment } });
+  const paid = await apiFetch(url, { ...init, headers: { ...init.headers, 'X-PAYMENT': xPayment } });
   if (!paid.ok) throw new Error(await errorOf(paid));
   return (await paid.json()) as T;
 }

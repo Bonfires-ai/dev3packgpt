@@ -1,4 +1,4 @@
-import { beginLogin, clientId, flowCookie, publicOrigin, safeReturnTo } from '@/lib/auth';
+import { POPUP_COOKIE_NAME, beginLogin, clientId, flowCookie, publicOrigin, safeReturnTo } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -20,5 +20,15 @@ export async function GET(request: Request) {
   const { url, flow } = await beginLogin(origin, returnTo);
   const res = NextResponse.redirect(url);
   res.cookies.set(flowCookie(flow));
+  // Sign-in popup of the embedded widget: tells components/PopupHandoff to pass the token on.
+  if (new URL(request.url).searchParams.get('popup') === '1')
+    res.cookies.set({
+      name: POPUP_COOKIE_NAME,
+      value: '1',
+      path: '/',
+      maxAge: 600,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
   return res;
 }

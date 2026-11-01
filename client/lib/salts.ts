@@ -51,5 +51,6 @@ export const unknownAgent = () => NextResponse.json({ error: 'Unknown agent' }, 
 /** Pass a Salts refusal on as `{ error }`, keeping its status. */
 export async function upstreamError(res: Response) {
   const body = await res.json().catch(() => ({}));
+  console.warn(`salts upstream ${res.status}`, JSON.stringify(body).slice(0, 300));
   return NextResponse.json({ error: body.error ?? `Salts answered ${res.status}` }, { status: res.status });
 }

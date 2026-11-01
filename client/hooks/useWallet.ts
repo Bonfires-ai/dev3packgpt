@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/lib/api-fetch';
 import { useEffect, useState } from 'react';
 
 export type WalletCredit = { limit: number | null; usage: number | null; remaining: number | null };
@@ -13,7 +14,7 @@ export function useWallet(signedIn: boolean) {
       setCredit(null);
       return;
     }
-    fetch('/api/wallet', { cache: 'no-store' })
+    apiFetch('/api/wallet', { cache: 'no-store' })
       .then(res => (res.ok ? res.json() : null))
       .then(body => setCredit(body?.credit ?? null))
       .catch(() => undefined);

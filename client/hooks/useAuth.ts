@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch, isEmbedded, setAuthToken } from '@/lib/api-fetch';
 import { useCallback, useEffect, useState } from 'react';
 
 // Messages for the ?auth_error=<reason> the sign-in callback sends back.
@@ -32,11 +33,17 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  const refresh = useCallback(
+    () =>
+      apiFetch('/api/auth/me', { cache: 'no-store' })
+        .then(res => res.json())
+        .then(body => setUser(body.user ?? null))
+        .catch(() => setUser(null)),
+    []
+  );
+
   useEffect(() => {
-    fetch('/api/auth/me', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(body => setUser(body.user ?? null))
-      .catch(() => setUser(null));
+    refresh();
 
     // Show a failed sign-in once, then drop the reason from the address bar.
     const url = new URL(window.location.href);
@@ -49,11 +56,27 @@ export function useAuth() {
   }, []);
 
   const signIn = useCallback((returnTo = window.location.pathname + window.location.search) => {
+    if (isEmbedded()) {
+      // Salts' login page refuses to be framed, so sign in in a popup and take the token it sends back.
+      const popup = window.open('/api/auth/login?popup=1&returnTo=%2F', 'solene-signin', 'width=480,height=720');
+      if (!popup) return setAuthError('Allow pop-ups to sign in.');
+      const onMessage = (e: MessageEvent) => {
+        if (e.origin !== window.location.origin || e.source !== popup || e.data?.type !== 'solene-auth') return;
+        window.removeEventListener('message', onMessage);
+        if (e.data.token) {
+          setAuthToken(e.data.token);
+          refresh();
+        } else setAuthError(AUTH_ERRORS[e.data.error] ?? AUTH_ERRORS.failed);
+      };
+      window.addEventListener('message', onMessage);
+      return;
+    }
     window.location.href = `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
   }, []);
 
   const signOut = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    setAuthToken(null);
     setUser(null);
   }, []);
 

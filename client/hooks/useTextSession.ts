@@ -3,6 +3,7 @@
 import { findSaltsAgent } from '@/config/salts.config';
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
 import type { TalkStatus } from '@/hooks/useTalkSession';
+import { apiFetch } from '@/lib/api-fetch';
 import type { AgentMoodI } from '@/types/agent';
 import { track } from '@vercel/analytics';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,7 +17,7 @@ interface ActiveSession {
 
 // The server deletes the Salts session; keepalive lets it finish while the page unloads.
 function destroySession({ agent, sessionId }: ActiveSession) {
-  return fetch(`/api/salts/sessions/${encodeURIComponent(sessionId)}?agent=${encodeURIComponent(agent)}`, {
+  return apiFetch(`/api/salts/sessions/${encodeURIComponent(sessionId)}?agent=${encodeURIComponent(agent)}`, {
     method: 'DELETE',
     keepalive: true,
   }).catch(() => undefined);
@@ -69,7 +70,7 @@ export function useTextSession() {
     setStatus('connecting');
     track('conversation_started', { agent: agent.slug });
     try {
-      const res = await fetch('/api/salts/sessions', {
+      const res = await apiFetch('/api/salts/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent: agent.slug }),
@@ -124,7 +125,7 @@ export function useTextSession() {
     };
 
     try {
-      const res = await fetch(`/api/salts/sessions/${encodeURIComponent(session.sessionId)}/stream`, {
+      const res = await apiFetch(`/api/salts/sessions/${encodeURIComponent(session.sessionId)}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent: session.agent, message: text, mood: session.mood }),
