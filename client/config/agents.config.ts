@@ -67,8 +67,8 @@ export const homeAgents: HomeAgent[] = [
   },
   // The other instructors: one avatar for both languages for now.
   instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif'),
-  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.jpg'),
-  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.jpg'),
+  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif'),
+  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif'),
 ];
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
