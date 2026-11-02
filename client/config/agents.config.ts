@@ -17,7 +17,11 @@ export interface HomeAgent {
   avatar?: ByMood<string>;
   // Placeholder letters; defaults to the name's initials.
   initials?: string;
+  // Languages this agent is offered in; the carousel hides it in the others. Default: both.
+  languages?: AgentMoodI[];
 }
+
+export const availableIn = (agent: HomeAgent, mood: AgentMoodI) => !agent.languages || agent.languages.includes(mood);
 
 const { english, spanish } = personaConfig.moods;
 
@@ -42,7 +46,7 @@ export const VOICE_AGENT = 'solene';
 // First name, as the voice session's labels and the mic dialog use it.
 export const firstName = (agent: HomeAgent) => agent.name.split(' ')[0];
 
-const instructor = (slug: string, name: string, avatar: string): HomeAgent => {
+const instructor = (slug: string, name: string, avatar: string, languages: AgentMoodI[]): HomeAgent => {
   const first = name.split(' ')[0];
   return {
     slug,
@@ -51,6 +55,7 @@ const instructor = (slug: string, name: string, avatar: string): HomeAgent => {
     subtitle: { english: 'Dev3pack Instructor', spanish: 'Instructor de Dev3pack' },
     startLabel: { english: `Talk with ${first}`, spanish: `Habla con ${first}` },
     avatar: sameForBoth(avatar),
+    languages,
   };
 };
 
@@ -65,10 +70,10 @@ export const homeAgents: HomeAgent[] = [
     startLabel: { english: english.startChatButtonLabel, spanish: spanish.startChatButtonLabel },
     avatar: { english: english.avatarImage, spanish: spanish.avatarImage },
   },
-  // The other instructors: one avatar for both languages for now.
-  instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif'),
-  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif'),
-  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif'),
+  // The other instructors: one avatar for both languages, each offered in one language.
+  instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
+  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif', [AgentMoodEnum.ENGLISH]),
+  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif', [AgentMoodEnum.SPANISH]),
 ];
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its

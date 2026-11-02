@@ -9,7 +9,7 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { HomeAgent, VOICE_AGENT, availableIn, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -51,7 +51,11 @@ export default function HomePage() {
         : a
     );
   }, [auth.user]);
-  const homeAgent = agents.find(a => a.slug === agent) ?? agents[0];
+  // Only the agents offered in the chosen language; a hidden pick falls back to Solène.
+  const visibleAgents = useMemo(() => agents.filter(a => availableIn(a, mood)), [agents, mood]);
+  const homeAgent =
+    visibleAgents.find(a => a.slug === agent) ?? visibleAgents.find(a => a.slug === VOICE_AGENT) ?? visibleAgents[0];
+  const selectedSlug = homeAgent.slug;
   const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
@@ -96,11 +100,11 @@ export default function HomePage() {
     }
     // Paid sessions go through the wallet flow on /talk first.
     if (NEEDS_PAYMENT) {
-      router.push(`/talk?mood=${mood}&agent=${agent}`);
+      router.push(`/talk?mood=${mood}&agent=${selectedSlug}`);
       return;
     }
     // The room opens with the mic off; it asks for the mic when unmuted.
-    start(mood, agent);
+    start(mood, selectedSlug);
   };
 
   if (room && (status === 'connected' || status === 'ended')) {
@@ -223,7 +227,7 @@ export default function HomePage() {
           transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="mt-[clamp(1.25rem,4dvh,2.5rem)]"
         >
-          <AgentCarousel agents={agents} value={agent} onChange={setAgent} mood={mood} disabled={starting} />
+          <AgentCarousel agents={visibleAgents} value={selectedSlug} onChange={setAgent} mood={mood} disabled={starting} />
         </motion.div>
 
         {/* CTA */}
