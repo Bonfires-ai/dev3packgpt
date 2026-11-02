@@ -16,14 +16,18 @@ export function LanguageSelect({
   value,
   onChange,
   disabled,
+  languages,
 }: {
   value: AgentMoodI;
   onChange: (mood: AgentMoodI) => void;
   disabled?: boolean;
+  // Only these are offered; default both.
+  languages?: AgentMoodI[];
 }) {
+  const options = OPTIONS.filter(o => !languages || languages.includes(o.mood));
   return (
     <div role="radiogroup" aria-label="Language" className="inline-flex border border-[#E4EAEB] bg-white">
-      {OPTIONS.map(({ mood, flag }, i) => {
+      {options.map(({ mood, flag }, i) => {
         const selected = mood === value;
         return (
           <button

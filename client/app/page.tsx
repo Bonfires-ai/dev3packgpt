@@ -9,7 +9,7 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { HomeAgent, VOICE_AGENT, availableIn, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -29,7 +29,7 @@ const LANGUAGE_KEY = 'solene-language';
 
 export default function HomePage() {
   const router = useRouter();
-  const [mood, setMood] = useState<AgentMoodI>(AgentMoodEnum.ENGLISH);
+  const [preferredMood, setMood] = useState<AgentMoodI>(AgentMoodEnum.ENGLISH);
   const { room, status, error, start, reset } = useTalkSession();
   const text = useTextSession();
   const auth = useAuth();
@@ -51,11 +51,9 @@ export default function HomePage() {
         : a
     );
   }, [auth.user]);
-  // Only the agents offered in the chosen language; a hidden pick falls back to Solène.
-  const visibleAgents = useMemo(() => agents.filter(a => availableIn(a, mood)), [agents, mood]);
-  const homeAgent =
-    visibleAgents.find(a => a.slug === agent) ?? visibleAgents.find(a => a.slug === VOICE_AGENT) ?? visibleAgents[0];
-  const selectedSlug = homeAgent.slug;
+  const homeAgent = agents.find(a => a.slug === agent) ?? agents[0];
+  // An agent offered in one language only (Fabian, Santiago, Deepesh) pins it; the picker shows just that one.
+  const mood = homeAgent.languages?.includes(preferredMood) === false ? homeAgent.languages[0] : preferredMood;
   const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
@@ -100,11 +98,11 @@ export default function HomePage() {
     }
     // Paid sessions go through the wallet flow on /talk first.
     if (NEEDS_PAYMENT) {
-      router.push(`/talk?mood=${mood}&agent=${selectedSlug}`);
+      router.push(`/talk?mood=${mood}&agent=${agent}`);
       return;
     }
     // The room opens with the mic off; it asks for the mic when unmuted.
-    start(mood, selectedSlug);
+    start(mood, agent);
   };
 
   if (room && (status === 'connected' || status === 'ended')) {
@@ -227,7 +225,7 @@ export default function HomePage() {
           transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="mt-[clamp(1.25rem,4dvh,2.5rem)]"
         >
-          <AgentCarousel agents={visibleAgents} value={selectedSlug} onChange={setAgent} mood={mood} disabled={starting} />
+          <AgentCarousel agents={agents} value={agent} onChange={setAgent} mood={mood} disabled={starting} />
         </motion.div>
 
         {/* CTA */}
@@ -253,7 +251,7 @@ export default function HomePage() {
               </>
             )}
           </Button>
-          <LanguageSelect value={mood} onChange={handleLanguageChange} disabled={starting} />
+          <LanguageSelect value={mood} languages={homeAgent.languages} onChange={handleLanguageChange} disabled={starting} />
           {/* Out of the flow, so an error never pushes the page into scrolling. */}
           <p role="alert" className="absolute inset-x-0 top-full mt-3 text-sm font-inter text-[#DC2626]">
             {error ?? text.error}

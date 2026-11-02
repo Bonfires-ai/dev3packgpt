@@ -17,11 +17,9 @@ export interface HomeAgent {
   avatar?: ByMood<string>;
   // Placeholder letters; defaults to the name's initials.
   initials?: string;
-  // Languages this agent is offered in; the carousel hides it in the others. Default: both.
+  // Languages this agent is offered in; the language picker shows only these. Default: both.
   languages?: AgentMoodI[];
 }
-
-export const availableIn = (agent: HomeAgent, mood: AgentMoodI) => !agent.languages || agent.languages.includes(mood);
 
 const { english, spanish } = personaConfig.moods;
 
