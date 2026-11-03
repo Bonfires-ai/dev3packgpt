@@ -50,7 +50,7 @@ export const personaConfig = {
         motif: 'Thanks for learning with me',
         shareLabel: 'Share on X',
         shareText:
-          'Just wrapped a study session with {name}, my teaching assistant for the Dev3pack AI-Engineering Bootcamp. #Dev3pack',
+          'Just wrapped a study session with {name}, my teaching assistant for the Dev3pack Solana Rust Bootcamp. #Dev3pack',
         body: 'Keep the momentum going: explore more about the topics we talked about, and feel free to come back anytime if you have more questions.',
         linkLabel: 'Explore Dev3pack',
         saveLabel: 'Save session',
@@ -109,7 +109,7 @@ export const personaConfig = {
         motif: 'Gracias por aprender conmigo',
         shareLabel: 'Compartir en X',
         shareText:
-          'Acabo de terminar una sesión de estudio con {name}, mi asistente de enseñanza del Dev3pack AI-Engineering Bootcamp. #Dev3pack',
+          'Acabo de terminar una sesión de estudio con {name}, mi asistente de enseñanza del Dev3pack Solana Rust Bootcamp. #Dev3pack',
         body: 'Mantén el impulso: profundiza en los temas de los que hablamos y vuelve cuando quieras si tienes más preguntas.',
         linkLabel: 'Descubre Dev3pack',
         saveLabel: 'Guardar sesión',
