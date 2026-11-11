@@ -9,7 +9,7 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { HomeAgent, VOICE_AGENT, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { DEFAULT_AGENT, HomeAgent, homeAgents, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -34,7 +34,7 @@ export default function HomePage() {
   const text = useTextSession();
   const auth = useAuth();
   const wallet = useWallet(auth.signedIn);
-  const [agent, setAgent] = useState(VOICE_AGENT);
+  const [agent, setAgent] = useState(DEFAULT_AGENT);
   // Signed in, the text agent becomes the user's own: "Ana's", with their photo or else their initials.
   const agents = useMemo<HomeAgent[]>(() => {
     const user = auth.user;

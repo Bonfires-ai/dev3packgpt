@@ -57,7 +57,7 @@ const instructor = (slug: string, name: string, avatar: string, languages: Agent
   };
 };
 
-// In carousel order; the page starts on Solène.
+// In carousel order; the page starts on the first voice agent (DEFAULT_AGENT).
 export const homeAgents: HomeAgent[] = [
   textAgent('general-assistant'),
   // Voice instructors: one avatar for both languages, each offered in one language (Solène in both).
@@ -73,6 +73,9 @@ export const homeAgents: HomeAgent[] = [
     avatar: { english: english.avatarImage, spanish: spanish.avatarImage },
   },
 ];
+
+// The slide the home page opens on: the first LiveKit (voice) agent.
+export const DEFAULT_AGENT = homeAgents.find(agent => agent.kind === 'voice')?.slug ?? homeAgents[0].slug;
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
 // persona (PERSONAS in agent/voice_agent/persona_config.py) and, per language,
