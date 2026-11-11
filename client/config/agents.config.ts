@@ -60,6 +60,10 @@ const instructor = (slug: string, name: string, avatar: string, languages: Agent
 // In carousel order; the page starts on Solène.
 export const homeAgents: HomeAgent[] = [
   textAgent('general-assistant'),
+  // Voice instructors: one avatar for both languages, each offered in one language (Solène in both).
+  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif', [AgentMoodEnum.ENGLISH]),
+  instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
+  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif', [AgentMoodEnum.SPANISH]),
   {
     slug: VOICE_AGENT,
     kind: 'voice',
@@ -68,10 +72,6 @@ export const homeAgents: HomeAgent[] = [
     startLabel: { english: english.startChatButtonLabel, spanish: spanish.startChatButtonLabel },
     avatar: { english: english.avatarImage, spanish: spanish.avatarImage },
   },
-  // The other instructors: one avatar for both languages, each offered in one language.
-  instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
-  instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif', [AgentMoodEnum.ENGLISH]),
-  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif', [AgentMoodEnum.SPANISH]),
 ];
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
