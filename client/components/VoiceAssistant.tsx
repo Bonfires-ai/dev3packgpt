@@ -1,6 +1,7 @@
 import { AgentAudioVisualizerRadial } from '@/components/AgentAudioVisualizerRadial';
 import { MicDialogState, MicPermissionDialog, micPermission } from '@/components/MicPermissionDialog';
 import { NoAgentNotification } from '@/components/NoAgentNotification';
+import { QuickReplies, quickRepliesAnchor } from '@/components/QuickReplies';
 import { SessionEndCard } from '@/components/SessionEndCard';
 import TranscriptionView from '@/components/TranscriptionView';
 import { MicIcon } from '@/components/icons/MicIcon';
@@ -113,23 +114,48 @@ export function VoiceAssistant({
     await room.localParticipant.sendText('end', { topic: 'user_end_conversation' });
   };
 
-  const handleSend = async (e: FormEvent) => {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setDraft('');
+  // The agent joins the room before its session starts and only reads text
+  // once it is listening; anything sent earlier is dropped. Hold messages (and
+  // the mute toggle) until then, and send them in order once it is ready.
+  const agentReady = agentState === 'listening' || agentState === 'thinking' || agentState === 'speaking';
+  const pending = useRef<{ text: string; topic: string }[]>([]);
+  const sendToAgent = async (text: string, topic: string) => {
+    if (!agentReady) {
+      pending.current.push({ text, topic });
+      return;
+    }
+    await room.localParticipant.sendText(text, { topic });
+  };
+  useEffect(() => {
+    if (!agentReady || pending.current.length === 0) return;
+    const queued = pending.current;
+    pending.current = [];
+    (async () => {
+      for (const { text, topic } of queued) await room.localParticipant.sendText(text, { topic });
+    })();
+  }, [agentReady, room]);
+
+  const sendMessage = async (text: string) => {
     const now = Date.now();
     setLocalMessages(prev => [
       ...prev,
       { id: `local-${now}`, text, role: 'user', firstReceivedTime: now, local: true },
     ]);
-    await room.localParticipant.sendText(text, { topic: 'lk.chat' });
+    await sendToAgent(text, 'lk.chat');
+  };
+
+  const handleSend = async (e: FormEvent) => {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    setDraft('');
+    await sendMessage(text);
   };
 
   const handleToggleMute = async () => {
     const next = !agentMuted;
     setAgentMuted(next);
-    await room.localParticipant.sendText(String(next), { topic: 'agent_audio_muted' });
+    await sendToAgent(String(next), 'agent_audio_muted');
   };
 
   const handleSaveSession = () =>
@@ -142,6 +168,7 @@ export function VoiceAssistant({
     });
 
   const inSession = !ended && !ending;
+  const quickAnchor = inSession ? quickRepliesAnchor(combinedTranscriptions) : null;
 
   return (
     // Header, scrolling messages and input stack as three rows, so the input
@@ -171,6 +198,16 @@ export function VoiceAssistant({
           mood={mood}
           combinedTranscriptions={combinedTranscriptions}
           thinking={inSession && agentState === 'thinking'}
+          afterMessages={
+            quickAnchor && (
+              <QuickReplies
+                key={quickAnchor}
+                mood={mood}
+                onBranch={picked => setLocalMessages(prev => [...prev, ...picked])}
+                onAsk={sendMessage}
+              />
+            )
+          }
           footer={
             ended && (
               <SessionEndCard

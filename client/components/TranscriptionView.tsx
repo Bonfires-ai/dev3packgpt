@@ -48,6 +48,7 @@ export default function TranscriptionView({
   thinking = false,
   header,
   footer,
+  afterMessages,
 }: {
   mood: AgentMoodI;
   combinedTranscriptions: Transcription[];
@@ -57,6 +58,8 @@ export default function TranscriptionView({
   header?: React.ReactNode;
   // Rendered after the messages, inside the scroll area.
   footer?: React.ReactNode;
+  // Rendered right under the latest message, hidden while the agent thinks.
+  afterMessages?: React.ReactNode;
 }) {
   const isThinking = thinking;
 
@@ -117,6 +120,7 @@ export default function TranscriptionView({
           />
         ))}
 
+        {!isThinking && afterMessages}
         {isThinking && <ChatBubble id={'agent-thinking'} role={'assistant'} mood={mood} thinking isLast />}
         {footer}
       </div>

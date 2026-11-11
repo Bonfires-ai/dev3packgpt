@@ -1,6 +1,7 @@
 'use client';
 
 import { nyghtMedium } from '@/app/fonts/fonts';
+import { QuickReplies, quickRepliesAnchor } from '@/components/QuickReplies';
 import { SessionEndCard } from '@/components/SessionEndCard';
 import TranscriptionView from '@/components/TranscriptionView';
 import { PhoneDownIcon } from '@/components/icons/PhoneDownIcon';
@@ -11,7 +12,7 @@ import { downloadTranscript } from '@/lib/transcript';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * The text-only chat room for a Salts agent. Same layout as VoiceAssistant
@@ -44,6 +45,14 @@ export function TextAssistant({
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Quick-reply picks stay on the client, merged into the chat by time.
+  const [quickMessages, setQuickMessages] = useState<Transcription[]>([]);
+  const allMessages = useMemo(
+    () => [...messages, ...quickMessages].sort((a, b) => a.firstReceivedTime - b.firstReceivedTime),
+    [messages, quickMessages]
+  );
+  const quickAnchor = ended ? null : quickRepliesAnchor(allMessages);
+
   // Bring the end card into view when the session ends.
   const endCardRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -65,10 +74,10 @@ export function TextAssistant({
 
   const handleSaveSession = () =>
     downloadTranscript({
-      messages,
+      messages: allMessages,
       mood,
       agentName: agent.name,
-      title: `${agent.name} · ${new Date(messages[0]?.firstReceivedTime ?? Date.now()).toLocaleDateString()}`,
+      title: `${agent.name} · ${new Date(allMessages[0]?.firstReceivedTime ?? Date.now()).toLocaleDateString()}`,
       filePrefix: `${agent.slug}-session`,
     });
 
@@ -91,8 +100,19 @@ export function TextAssistant({
       <div className="min-h-0 flex-1">
         <TranscriptionView
           mood={mood}
-          combinedTranscriptions={messages}
+          combinedTranscriptions={allMessages}
           thinking={!ended && thinking}
+          afterMessages={
+            quickAnchor && (
+              <QuickReplies
+                key={quickAnchor}
+                mood={mood}
+                disabled={replying}
+                onBranch={picked => setQuickMessages(prev => [...prev, ...picked])}
+                onAsk={onSend}
+              />
+            )
+          }
           footer={
             ended && (
               <SessionEndCard
@@ -100,7 +120,7 @@ export function TextAssistant({
                 mood={mood}
                 onRestart={onRestart}
                 onSave={handleSaveSession}
-                canSave={messages.length > 0}
+                canSave={allMessages.length > 0}
                 againIcon={<ChatIcon />}
                 shareable={false}
                 agentName={agent.name}
