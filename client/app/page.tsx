@@ -9,7 +9,7 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { DEFAULT_AGENT, HomeAgent, homeAgents, shortStartLabel } from '@/config/agents.config';
+import { DEFAULT_AGENT, HomeAgent, homeAgents, sameForAll, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -17,7 +17,7 @@ import { useAuth, userFirstName, userInitials } from '@/hooks/useAuth';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { useTextSession } from '@/hooks/useTextSession';
 import { useWallet } from '@/hooks/useWallet';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodEnum, AgentMoodI, isMood } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -46,14 +46,14 @@ export default function HomePage() {
             ...a,
             name: `${userFirstName(user)}'s`,
             initials,
-            avatar: user.picture ? { english: user.picture, spanish: user.picture } : undefined,
+            avatar: user.picture ? sameForAll(user.picture) : undefined,
           }
         : a
     );
   }, [auth.user]);
   const homeAgent = agents.find(a => a.slug === agent) ?? agents[0];
   // An agent offered in one language only (Fabian, Santiago, Deepesh) pins it; the picker shows just that one.
-  const mood = homeAgent.languages?.includes(preferredMood) === false ? homeAgent.languages[0] : preferredMood;
+  const mood = homeAgent.languages.includes(preferredMood) ? preferredMood : homeAgent.languages[0];
   const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
@@ -73,7 +73,7 @@ export default function HomePage() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LANGUAGE_KEY);
-      if (saved === AgentMoodEnum.ENGLISH || saved === AgentMoodEnum.SPANISH) setMood(saved);
+      if (isMood(saved)) setMood(saved);
     } catch {}
   }, []);
 

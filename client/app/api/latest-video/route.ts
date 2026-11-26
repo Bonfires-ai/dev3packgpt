@@ -3,11 +3,14 @@ import { NextResponse } from 'next/server';
 
 // The most recently ingested YouTube video in a language's bonfire, for the
 // quick-option chip that asks the agent about it. Each language has its own
-// bonfire (dev3pack / dev3pack_es); its read key stays on the server.
+// bonfire (dev3pack / dev3pack_es); Turkish and Ukrainian use the English one.
+// The read keys stay on the server.
 const API_URL = process.env.BONFIRES_API_URL ?? 'https://api.bonfires.ai';
 const KEYS: Record<AgentMoodI, string | undefined> = {
   [AgentMoodEnum.ENGLISH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.SPANISH]: process.env.BONFIRES_KEY_ES,
+  [AgentMoodEnum.TURKISH]: process.env.BONFIRES_KEY_EN,
+  [AgentMoodEnum.UKRAINIAN]: process.env.BONFIRES_KEY_EN,
 };
 
 // New videos are rare; one lookup per language every few minutes is plenty.

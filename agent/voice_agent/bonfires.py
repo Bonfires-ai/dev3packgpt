@@ -73,7 +73,8 @@ async def prime_context(mood: str = "english") -> str:
         logger.info("Bonfires not configured — skipping context priming")
         return ""
 
-    queries = [_PRIME_QUERIES["core"], _PRIME_QUERIES.get(mood, "")]
+    # Languages without a bonfire of their own (Turkish, Ukrainian) search the English one.
+    queries = [_PRIME_QUERIES["core"], _PRIME_QUERIES.get(mood, _PRIME_QUERIES["english"])]
     queries = [q for q in queries if q]
 
     parts: list[str] = []

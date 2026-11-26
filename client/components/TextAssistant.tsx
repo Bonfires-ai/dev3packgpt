@@ -9,7 +9,7 @@ import { personaConfig } from '@/config/persona.config';
 import type { SaltsAgent } from '@/config/salts.config';
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
 import { downloadTranscript } from '@/lib/transcript';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -39,7 +39,7 @@ export function TextAssistant({
   onEnd: () => void;
   onRestart: () => void;
 }) {
-  const moodConfig = personaConfig.moods[mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english'];
+  const moodConfig = personaConfig.moods[mood];
   const accent = moodConfig.visualizerBgColor;
   const withName = (label: string) => label.replace('{name}', agent.name);
   const [draft, setDraft] = useState('');

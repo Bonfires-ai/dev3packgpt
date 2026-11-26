@@ -6,7 +6,7 @@ import { MicIcon } from '@/components/icons/MicIcon';
 import { XIcon } from '@/components/icons/XIcon';
 import { personaConfig } from '@/config/persona.config';
 import { renderSessionCard } from '@/lib/sessionCardImage';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { ReactNode, forwardRef } from 'react';
 
@@ -41,7 +41,7 @@ export const SessionEndCard = forwardRef<
     },
     ref
   ) => {
-    const moodConfig = personaConfig.moods[mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english'];
+    const moodConfig = personaConfig.moods[mood];
     const card = moodConfig.endCard;
     // The post links to /share, whose preview on X is this card. Phones also
     // attach the card image itself through the system share sheet.

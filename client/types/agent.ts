@@ -1,9 +1,17 @@
+// Languages a session can be held in. Turkish and Ukrainian speak their own
+// language but search the English bonfire (see BONFIRES_MCP in agents.config.ts).
 export enum AgentMoodEnum {
   ENGLISH = 'english',
   SPANISH = 'spanish',
+  TURKISH = 'turkish',
+  UKRAINIAN = 'ukrainian',
 }
 
-export type AgentMoodI = AgentMoodEnum.SPANISH | AgentMoodEnum.ENGLISH;
+export type AgentMoodI = AgentMoodEnum;
+
+export const ALL_MOODS = Object.values(AgentMoodEnum) as AgentMoodI[];
+
+export const isMood = (value: unknown): value is AgentMoodI => ALL_MOODS.includes(value as AgentMoodI);
 
 export interface ZoraCoinResult {
   zoraLink: string;

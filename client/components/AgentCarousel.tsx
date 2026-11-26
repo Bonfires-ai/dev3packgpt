@@ -1,7 +1,7 @@
 'use client';
 
 import { type HomeAgent, homeAgents } from '@/config/agents.config';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { ALL_MOODS, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import { PanInfo, animate, motion, useMotionValue } from 'framer-motion';
 import Image from 'next/image';
@@ -137,9 +137,9 @@ function Slide({ agent, mood, active }: { agent: HomeAgent; mood: AgentMoodI; ac
       className="w-full shrink-0"
     >
       {avatar ? (
-        // Both language avatars share one cell and crossfade, so switching never flashes blank.
+        // Every language's avatar shares one cell and crossfade, so switching never flashes blank.
         <div className="grid">
-          {[AgentMoodEnum.ENGLISH, AgentMoodEnum.SPANISH].map(m => (
+          {ALL_MOODS.map(m => (
             <Image
               key={m}
               src={avatar[m]}

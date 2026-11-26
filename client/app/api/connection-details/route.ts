@@ -1,7 +1,7 @@
 import { VOICE_AGENT, voiceSessions } from '@/config/agents.config';
 import { requireMember } from '@/lib/auth';
 import { ensureWalletKey } from '@/lib/wallet';
-import { AgentMoodEnum } from '@/types/agent';
+import { isMood } from '@/types/agent';
 import crypto from 'crypto';
 import { jwtVerify } from 'jose';
 import { AccessToken, AccessTokenOptions, AgentDispatchClient, VideoGrant } from 'livekit-server-sdk';
@@ -93,7 +93,7 @@ export async function GET(request: Request) {
     // --- End Gate ---
 
     const mood = searchParams.get('mood');
-    if (mood !== AgentMoodEnum.ENGLISH && mood !== AgentMoodEnum.SPANISH) {
+    if (!isMood(mood)) {
       return NextResponse.json({ error: 'Unknown language' }, { status: 400 });
     }
     const voiceSession = voiceSessions[searchParams.get('agent') ?? VOICE_AGENT];

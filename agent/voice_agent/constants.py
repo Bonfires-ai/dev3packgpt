@@ -24,9 +24,13 @@ mood_initial_greetings = {"english": english_greetings, "spanish": spanish_greet
 mood_greeting = {
     "english": "Hey, welcome! I'm here to help with your questions. What would you like to understand better?",
     "spanish": "¡Bienvenido! Estoy aquí para responder tus preguntas. ¿Qué te gustaría entender mejor?",
+    "turkish": "Hoş geldin! Sorularına yardım etmek için buradayım. Neyi daha iyi anlamak istersin?",
+    "ukrainian": "Вітаю! Я тут, щоб допомогти з твоїми запитаннями. Що б ти хотів краще зрозуміти?",
 }
 
 mood_goodbye = {
     "english": "Goodbye for now, and take care. I'll be here when you want to keep learning.",
     "spanish": "Hasta pronto, y cuídate. Aquí estaré cuando quieras seguir aprendiendo.",
+    "turkish": "Şimdilik hoşça kal, kendine iyi bak. Öğrenmeye devam etmek istediğinde buradayım.",
+    "ukrainian": "Бувай, і бережи себе. Я буду тут, коли захочеш навчатися далі.",
 }

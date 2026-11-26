@@ -7,6 +7,8 @@ import clsx from 'clsx';
 const OPTIONS: { mood: AgentMoodI; flag: string }[] = [
   { mood: AgentMoodEnum.ENGLISH, flag: '🇬🇧' },
   { mood: AgentMoodEnum.SPANISH, flag: '🇪🇸' },
+  { mood: AgentMoodEnum.TURKISH, flag: '🇹🇷' },
+  { mood: AgentMoodEnum.UKRAINIAN, flag: '🇺🇦' },
 ];
 
 // Square corners and tracked uppercase, like the CTA above it. The selected
@@ -21,10 +23,10 @@ export function LanguageSelect({
   value: AgentMoodI;
   onChange: (mood: AgentMoodI) => void;
   disabled?: boolean;
-  // Only these are offered; default both.
-  languages?: AgentMoodI[];
+  // Only these are offered.
+  languages: AgentMoodI[];
 }) {
-  const options = OPTIONS.filter(o => !languages || languages.includes(o.mood));
+  const options = OPTIONS.filter(o => languages.includes(o.mood));
   return (
     <div role="radiogroup" aria-label="Language" className="inline-flex border border-[#E4EAEB] bg-white">
       {options.map(({ mood, flag }, i) => {

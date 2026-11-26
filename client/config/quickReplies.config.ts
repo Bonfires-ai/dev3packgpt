@@ -17,51 +17,88 @@ export type QuickReplyNode = {
   disabled?: boolean;
 } & ({ reply: ByMood<string>; children: QuickReplyNode[] } | { ask: ByMood<string> });
 
-const both = (english: string, spanish: string): ByMood<string> => ({
+const all = (english: string, spanish: string, turkish: string, ukrainian: string): ByMood<string> => ({
   [AgentMoodEnum.ENGLISH]: english,
   [AgentMoodEnum.SPANISH]: spanish,
+  [AgentMoodEnum.TURKISH]: turkish,
+  [AgentMoodEnum.UKRAINIAN]: ukrainian,
 });
 
 export const quickReplyTree: QuickReplyNode[] = [
   {
     id: 'learn',
-    label: both('Learn', 'Aprender'),
-    reply: both('What would you like to know?', '¿Qué te gustaría saber?'),
+    label: all('Learn', 'Aprender', 'Öğren', 'Навчатися'),
+    reply: all(
+      'What would you like to know?',
+      '¿Qué te gustaría saber?',
+      'Ne öğrenmek istersin?',
+      'Що ти хочеш дізнатися?'
+    ),
     children: [
       {
         id: 'bootcamp-info',
-        label: both('Bootcamp info', 'Info del bootcamp'),
-        ask: both('Tell me more about the bootcamp', 'Cuéntame más sobre el bootcamp'),
+        label: all('Bootcamp info', 'Info del bootcamp', 'Bootcamp bilgisi', 'Про буткемп'),
+        ask: all(
+          'Tell me more about the bootcamp',
+          'Cuéntame más sobre el bootcamp',
+          'Bana bootcamp hakkında daha fazla bilgi ver',
+          'Розкажи більше про буткемп'
+        ),
       },
       {
         id: 'homework',
-        label: both('Homework', 'Tareas'),
-        ask: both('Tell me about the homework', 'Cuéntame sobre las tareas'),
+        label: all('Homework', 'Tareas', 'Ödevler', 'Домашні завдання'),
+        ask: all(
+          'Tell me about the homework',
+          'Cuéntame sobre las tareas',
+          'Bana ödevlerden bahset',
+          'Розкажи про домашні завдання'
+        ),
       },
       {
         id: 'environment',
-        label: both('Environment setup', 'Configurar entorno'),
-        ask: both('How do I set up my development environment?', '¿Cómo configuro mi entorno de desarrollo?'),
+        label: all('Environment setup', 'Configurar entorno', 'Ortam kurulumu', 'Налаштування середовища'),
+        ask: all(
+          'How do I set up my development environment?',
+          '¿Cómo configuro mi entorno de desarrollo?',
+          'Geliştirme ortamımı nasıl kurarım?',
+          'Як налаштувати середовище розробки?'
+        ),
       },
       {
         id: 'sessions',
-        label: both('Sessions', 'Sesiones'),
-        reply: both('Which session?', '¿Qué sesión?'),
+        label: all('Sessions', 'Sesiones', 'Oturumlar', 'Заняття'),
+        reply: all('Which session?', '¿Qué sesión?', 'Hangi oturum?', 'Яке заняття?'),
         children: [
           {
             id: 'rust',
-            label: both('Rust', 'Rust'),
-            ask: both('What was covered in the Rust session?', '¿Qué se vio en la sesión de Rust?'),
+            label: all('Rust', 'Rust', 'Rust', 'Rust'),
+            ask: all(
+              'What was covered in the Rust session?',
+              '¿Qué se vio en la sesión de Rust?',
+              'Rust oturumunda neler işlendi?',
+              'Що розбирали на занятті з Rust?'
+            ),
           },
           {
             id: 'solana',
-            label: both('Solana', 'Solana'),
-            ask: both('What was covered in the Solana session?', '¿Qué se vio en la sesión de Solana?'),
+            label: all('Solana', 'Solana', 'Solana', 'Solana'),
+            ask: all(
+              'What was covered in the Solana session?',
+              '¿Qué se vio en la sesión de Solana?',
+              'Solana oturumunda neler işlendi?',
+              'Що розбирали на занятті з Solana?'
+            ),
           },
           {
             id: 'anchor',
-            label: both('Anchor', 'Anchor'),
-            ask: both('What was covered in the Anchor session?', '¿Qué se vio en la sesión de Anchor?'),
+            label: all('Anchor', 'Anchor', 'Anchor', 'Anchor'),
+            ask: all(
+              'What was covered in the Anchor session?',
+              '¿Qué se vio en la sesión de Anchor?',
+              'Anchor oturumunda neler işlendi?',
+              'Що розбирали на занятті з Anchor?'
+            ),
           },
         ],
       },
@@ -69,28 +106,41 @@ export const quickReplyTree: QuickReplyNode[] = [
   },
   {
     id: 'build',
-    label: both('Build', 'Construir'),
-    ask: both('Help me build my project', 'Ayúdame a construir mi proyecto'),
+    label: all('Build', 'Construir', 'Geliştir', 'Створювати'),
+    ask: all(
+      'Help me build my project',
+      'Ayúdame a construir mi proyecto',
+      'Projemi geliştirmeme yardım et',
+      'Допоможи мені створити мій проєкт'
+    ),
     disabled: true,
   },
   {
     id: 'accelerate',
-    label: both('Accelerate', 'Acelerar'),
-    ask: both('How can I take my project further?', '¿Cómo puedo llevar mi proyecto más lejos?'),
+    label: all('Accelerate', 'Acelerar', 'Hızlandır', 'Прискорити'),
+    ask: all(
+      'How can I take my project further?',
+      '¿Cómo puedo llevar mi proyecto más lejos?',
+      'Projemi nasıl daha ileri taşıyabilirim?',
+      'Як розвинути мій проєкт далі?'
+    ),
     disabled: true,
   },
 ];
 
-export const quickReplyBackLabel = both('Back', 'Atrás');
+export const quickReplyBackLabel = all('Back', 'Atrás', 'Geri', 'Назад');
 
 // The voice agent's idle check-in ("Hello?! Are you still there!?"). It is
 // written by the LLM, so it is matched loosely; one brings the options back.
-export const IDLE_PROMPT = /still there|are you there|sigues ah[ií]|est[aá]s ah[ií]/i;
+export const IDLE_PROMPT =
+  /still there|are you there|sigues ah[ií]|est[aá]s ah[ií]|orada m[ıi]s[ıi]n|hâlâ orada|hala orada|ти тут|ви тут|ще тут/i;
 
 // The root's first option: the newest session recording in the bonfire
 // (/api/latest-video), labelled with its title and asked about by name.
 export const latestVideoAsk = (title: string) =>
-  both(
+  all(
     `I want to learn more about the "${title}" session recording`,
-    `Quiero saber más sobre la grabación de la sesión "${title}"`
+    `Quiero saber más sobre la grabación de la sesión "${title}"`,
+    `"${title}" oturum kaydı hakkında daha fazla bilgi almak istiyorum`,
+    `Я хочу дізнатися більше про запис заняття "${title}"`
   );

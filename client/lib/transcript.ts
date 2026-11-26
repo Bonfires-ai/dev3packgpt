@@ -1,7 +1,7 @@
 import { mergeConsecutiveSegments, sanitizeText } from '@/components/TranscriptionView';
 import { personaConfig } from '@/config/persona.config';
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI } from '@/types/agent';
 
 // Downloads the conversation as Markdown: a title and details, then one
 // section per message. The agent's replies are kept as the Markdown it wrote.
@@ -18,7 +18,7 @@ export function downloadTranscript({
   title: string;
   filePrefix: string;
 }) {
-  const moodConfig = personaConfig.moods[mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english'];
+  const moodConfig = personaConfig.moods[mood];
   const card = moodConfig.endCard;
   const started = messages[0]?.firstReceivedTime ?? Date.now();
   const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

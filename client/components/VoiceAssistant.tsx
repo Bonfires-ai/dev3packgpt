@@ -11,7 +11,7 @@ import { personaConfig } from '@/config/persona.config';
 import useCombinedTranscriptions, { type Transcription } from '@/hooks/useCombinedTranscriptions';
 import useLocalMicTrack from '@/hooks/useLocalMicTrack';
 import { downloadTranscript } from '@/lib/transcript';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI } from '@/types/agent';
 import {
   type AgentState,
   RoomAudioRenderer,
@@ -45,7 +45,7 @@ export function VoiceAssistant({
 
   const room = useRoomContext();
 
-  const moodKey = mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english';
+  const moodKey = mood;
   const moodConfig = personaConfig.moods[moodKey];
   const accent = moodConfig.visualizerBgColor;
   const name = firstName(agent);

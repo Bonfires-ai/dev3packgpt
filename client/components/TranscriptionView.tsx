@@ -1,5 +1,5 @@
 import type { Transcription } from '@/hooks/useCombinedTranscriptions';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 import * as React from 'react';
 import Markdown, { type Components } from 'react-markdown';

@@ -29,6 +29,7 @@ from voice_agent.persona_config import (
     VOICE_STYLE,
     VOICE_USE_SPEAKER_BOOST,
     DEEPGRAM_LANGUAGE_BY_MOOD,
+    DEEPGRAM_MODEL_BY_MOOD,
     DEFAULT_PERSONA,
     PERSONAS,
 )
@@ -258,7 +259,7 @@ async def entrypoint(ctx: JobContext):  # noqa: C901 – keep high complexity fo
     # client's TranscriptionView sanitizer fixes the displayed transcript. The LLM
     # still receives the spelled-out form, but it's smart enough to interpret it.
     stt_kwargs: dict = {
-        "model": "nova-3",
+        "model": DEEPGRAM_MODEL_BY_MOOD[mood],
         "language": deepgram_language,
         "smart_format": True,
     }

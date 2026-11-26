@@ -2,7 +2,7 @@ import { findSaltsAgent } from '@/config/salts.config';
 import { requireMember } from '@/lib/auth';
 import { memberAgentAuth, ownsSession, saltsFetch, unknownAgent, upstreamError } from '@/lib/salts';
 import { ensureWalletKey } from '@/lib/wallet';
-import { AgentMoodEnum } from '@/types/agent';
+import { AgentMoodEnum, isMood } from '@/types/agent';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -36,10 +36,7 @@ export async function POST(request: Request, { params }: { params: { sessionId: 
     method: 'POST',
     headers: {
       'X-OpenRouter-Key': walletKey,
-      'X-MCP-Servers':
-        findSaltsAgent(agent)!.mcpServer[
-          mood === AgentMoodEnum.SPANISH ? AgentMoodEnum.SPANISH : AgentMoodEnum.ENGLISH
-        ],
+      'X-MCP-Servers': findSaltsAgent(agent)!.mcpServer[isMood(mood) ? mood : AgentMoodEnum.ENGLISH],
     },
     body: JSON.stringify({ message }),
     signal: request.signal,

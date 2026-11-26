@@ -3,7 +3,6 @@
 import { personaConfig } from '@/config/persona.config';
 import { type VoiceSessionStep, useVoiceSession } from '@/hooks/useVoiceSession';
 import type { AgentMoodI } from '@/types/agent';
-import { AgentMoodEnum } from '@/types/agent';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
@@ -16,7 +15,7 @@ interface PaymentGateProps {
   onSessionReady: (sessionToken: string) => void;
 }
 
-const getMoodKey = (mood: AgentMoodI) => (mood === AgentMoodEnum.SPANISH ? 'spanish' : 'english');
+const getMoodKey = (mood: AgentMoodI) => mood;
 
 const stepLabels: Record<VoiceSessionStep, string> = {
   DISCONNECTED: 'Connect wallet to begin',

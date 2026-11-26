@@ -6,12 +6,11 @@ import { PaymentGate } from '@/components/PaymentGate';
 import { VOICE_AGENT, findHomeAgent } from '@/config/agents.config';
 import { useAuth } from '@/hooks/useAuth';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { AgentMoodI, isMood } from '@/types/agent';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef } from 'react';
 
-const parseMoodQueryParam = (query: string | null): AgentMoodI | null =>
-  query === AgentMoodEnum.ENGLISH || query === AgentMoodEnum.SPANISH ? query : null;
+const parseMoodQueryParam = (query: string | null): AgentMoodI | null => (isMood(query) ? query : null);
 
 // Direct links (/talk?mood=english) and paid sessions land here. Free sessions
 // normally start from the home page without leaving it.

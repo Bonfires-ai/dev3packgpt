@@ -45,15 +45,25 @@ ENABLE_ZORA_MINTING = os.environ.get("ENABLE_ZORA_MINTING", "false").lower() != 
 DEEPGRAM_LANGUAGE_BY_MOOD = {
     "english": "en-US",
     "spanish": "es",
+    "turkish": "tr",
+    "ukrainian": "uk",
+}
+
+# nova-2 for Turkish and Ukrainian, which it has long supported; nova-3 elsewhere.
+DEEPGRAM_MODEL_BY_MOOD = {
+    "english": "nova-3",
+    "spanish": "nova-3",
+    "turkish": "nova-2",
+    "ukrainian": "nova-2",
 }
 
 # Voice IDs — premade ElevenLabs voices, which every account has, until each
 # instructor has a clone. eleven_flash_v2_5 is multilingual, so one voice
-# speaks both languages. Swap in a clone per persona with the
+# speaks every language. Swap in a clone per persona with the
 # ELEVEN_VOICE_ID_<PERSONA> secret (e.g. ELEVEN_VOICE_ID_SOLENE).
 def _voice(persona: str, premade: str) -> dict:
     voice_id = os.environ.get(f"ELEVEN_VOICE_ID_{persona.upper()}", premade)
-    return {"english": voice_id, "spanish": voice_id}
+    return {mood: voice_id for mood in DEEPGRAM_LANGUAGE_BY_MOOD}
 
 # ---------------------------------------------------------------------------
 # Greetings — randomly picked at session start, prepended before LLM input
@@ -188,6 +198,30 @@ INSTRUCTOR_INTRO = {
         "Ayudas a los estudiantes con sus preguntas sobre el bootcamp, web3, IA y desarrollo. "
         "Habla siempre en primera persona. Nunca hables de ti en tercera persona."
     ),
+    # Turkish and Ukrainian sessions search the English bonfire (the client's
+    # BONFIRES_MCP), so the agent searches in English and answers in its language.
+    "turkish": (
+        "**RESPOND ONLY IN TURKISH.** The user has selected the Turkish session. "
+        "Even if they speak or write another language, including English, reply in Turkish.\n\n"
+        "You ARE {persona_name}, an instructor of the Dev3Pack Solana Rust Bootcamp. "
+        "You help students with their questions about the bootcamp, web3, AI and building. "
+        "Always speak in first person. Never refer to yourself in the third person.\n\n"
+        "**Your knowledge tools and the course material are in English.** Always write "
+        "search queries in English, translating the student's question, then explain the "
+        "results in natural Turkish. Keep technical terms Turkish developers use in English "
+        "(Rust, Solana, Anchor, struct, enum, borrow checker) as they are."
+    ),
+    "ukrainian": (
+        "**RESPOND ONLY IN UKRAINIAN.** The user has selected the Ukrainian session. "
+        "Even if they speak or write another language, including English, reply in Ukrainian.\n\n"
+        "You ARE {persona_name}, an instructor of the Dev3Pack Solana Rust Bootcamp. "
+        "You help students with their questions about the bootcamp, web3, AI and building. "
+        "Always speak in first person. Never refer to yourself in the third person.\n\n"
+        "**Your knowledge tools and the course material are in English.** Always write "
+        "search queries in English, translating the student's question, then explain the "
+        "results in natural Ukrainian. Keep technical terms Ukrainian developers use in English "
+        "(Rust, Solana, Anchor, struct, enum, borrow checker) as they are."
+    ),
 }
 
 INSTRUCTOR_GOAL = {
@@ -203,6 +237,9 @@ INSTRUCTOR_GOAL = {
         "o probar después."
     ),
 }
+# Instructions in English are followed in any output language; the intro sets it.
+INSTRUCTOR_GOAL["turkish"] = INSTRUCTOR_GOAL["english"]
+INSTRUCTOR_GOAL["ukrainian"] = INSTRUCTOR_GOAL["english"]
 
 
 def _instructor(name: str, voice_id: dict) -> dict:
@@ -234,6 +271,8 @@ PERSONAS = {
     "fabian": _instructor("Fabian Sanchez", _voice("fabian", "iP95p4xoKVk53GoZ742B")),  # Chris
     "deepesh": _instructor("Deepesh Singh", _voice("deepesh", "cjVigY5qzO86Huf0OWal")),  # Eric
     "santiago": _instructor("Santiago Villareal", _voice("santiago", "bIHbv24MWmeRgasZH58o")),  # Will
+    "ege": _instructor("Ege", _voice("ege", "ViD6cMSDRcIxRY7W8Dx8")),  # Turkish only
+    "fibo": _instructor("Fibo", _voice("fibo", "NS02pW5MNUQGGCr3uZtb")),  # Ukrainian only
 }
 DEFAULT_PERSONA = "solene"
 
