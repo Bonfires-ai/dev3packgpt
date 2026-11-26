@@ -80,8 +80,8 @@ export const homeAgents: HomeAgent[] = [
   instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif', [AgentMoodEnum.ENGLISH]),
   instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
   instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif', [AgentMoodEnum.SPANISH]),
-  instructor('ege', 'Ege', '/avatars/ege.jpg', [AgentMoodEnum.TURKISH]),
-  instructor('fibo', 'Fibo', '/avatars/fibo.jpg', [AgentMoodEnum.UKRAINIAN]),
+  instructor('ege', 'Ege', '/avatars/ege.gif', [AgentMoodEnum.TURKISH]),
+  instructor('fibo', 'Fibo', '/avatars/fibo.gif', [AgentMoodEnum.UKRAINIAN]),
   {
     slug: VOICE_AGENT,
     kind: 'voice',
