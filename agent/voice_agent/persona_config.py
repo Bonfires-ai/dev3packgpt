@@ -271,8 +271,8 @@ PERSONAS = {
     "fabian": _instructor("Fabian Sanchez", _voice("fabian", "iP95p4xoKVk53GoZ742B")),  # Chris
     "deepesh": _instructor("Deepesh Singh", _voice("deepesh", "cjVigY5qzO86Huf0OWal")),  # Eric
     "santiago": _instructor("Santiago Villareal", _voice("santiago", "bIHbv24MWmeRgasZH58o")),  # Will
-    "ege": _instructor("Ege", _voice("ege", "ViD6cMSDRcIxRY7W8Dx8")),  # Turkish only
-    "fibo": _instructor("Fibo", _voice("fibo", "NS02pW5MNUQGGCr3uZtb")),  # Ukrainian only
+    "ege": _instructor("Ege", _voice("ege", "0n8I2yPIZmsk6ZgxtULm")),  # Turkish only
+    "fibo": _instructor("Fibo", _voice("fibo", "6OFwGvPsNbe8ThoDdzKu")),  # Ukrainian only
 }
 DEFAULT_PERSONA = "solene"
 
