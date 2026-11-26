@@ -9,7 +9,7 @@ import { LanguageSelect } from '@/components/LanguageSelect';
 import { SignInDialog } from '@/components/SignInDialog';
 import { TextAssistant } from '@/components/TextAssistant';
 import { LogoutIcon } from '@/components/icons/LogoutIcon';
-import { DEFAULT_AGENT, HomeAgent, homeAgents, sameForAll, shortStartLabel } from '@/config/agents.config';
+import { DEFAULT_AGENT, HomeAgent, agentsFor, homeAgents, sameForAll, shortStartLabel } from '@/config/agents.config';
 import { toCredits } from '@/config/credits.config';
 import { personaConfig } from '@/config/persona.config';
 import { findSaltsAgent } from '@/config/salts.config';
@@ -17,7 +17,7 @@ import { useAuth, userFirstName, userInitials } from '@/hooks/useAuth';
 import { NEEDS_PAYMENT, useTalkSession } from '@/hooks/useTalkSession';
 import { useTextSession } from '@/hooks/useTextSession';
 import { useWallet } from '@/hooks/useWallet';
-import { AgentMoodEnum, AgentMoodI, isMood } from '@/types/agent';
+import { ALL_MOODS, AgentMoodEnum, AgentMoodI, isMood } from '@/types/agent';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,7 @@ const LANGUAGE_KEY = 'solene-language';
 
 export default function HomePage() {
   const router = useRouter();
-  const [preferredMood, setMood] = useState<AgentMoodI>(AgentMoodEnum.ENGLISH);
+  const [mood, setMood] = useState<AgentMoodI>(AgentMoodEnum.ENGLISH);
   const { room, status, error, start, reset } = useTalkSession();
   const text = useTextSession();
   const auth = useAuth();
@@ -51,9 +51,11 @@ export default function HomePage() {
         : a
     );
   }, [auth.user]);
-  const homeAgent = agents.find(a => a.slug === agent) ?? agents[0];
-  // An agent offered in one language only (Fabian, Santiago, Deepesh) pins it; the picker shows just that one.
-  const mood = homeAgent.languages.includes(preferredMood) ? preferredMood : homeAgent.languages[0];
+  // Language first: the carousel holds only the agents offered in it, and
+  // opens on its mentor (the first voice agent) unless one is already picked.
+  const languageAgents = agentsFor(agents, mood);
+  const homeAgent =
+    languageAgents.find(a => a.slug === agent) ?? languageAgents.find(a => a.kind === 'voice') ?? languageAgents[0];
   const textAgent = homeAgent.kind === 'text' ? findSaltsAgent(homeAgent.slug) : undefined;
   const starting = status === 'connecting' || text.status === 'connecting';
   const moodConfig = personaConfig.moods[mood];
@@ -98,11 +100,11 @@ export default function HomePage() {
     }
     // Paid sessions go through the wallet flow on /talk first.
     if (NEEDS_PAYMENT) {
-      router.push(`/talk?mood=${mood}&agent=${agent}`);
+      router.push(`/talk?mood=${mood}&agent=${homeAgent.slug}`);
       return;
     }
     // The room opens with the mic off; it asks for the mic when unmuted.
-    start(mood, agent);
+    start(mood, homeAgent.slug);
   };
 
   if (room && (status === 'connected' || status === 'ended')) {
@@ -180,6 +182,16 @@ export default function HomePage() {
       </header>
 
       <div className="z-10 flex flex-col items-center text-center justify-center px-6 py-4">
+        {/* Language first: it decides which mentors the carousel shows. */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-[clamp(1rem,3dvh,2rem)]"
+        >
+          <LanguageSelect value={mood} languages={ALL_MOODS} onChange={handleLanguageChange} disabled={starting} />
+        </motion.div>
+
         {/* Title block */}
         <div>
           <motion.h1
@@ -225,7 +237,13 @@ export default function HomePage() {
           transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="mt-[clamp(1.25rem,4dvh,2.5rem)]"
         >
-          <AgentCarousel agents={agents} value={agent} onChange={setAgent} mood={mood} disabled={starting} />
+          <AgentCarousel
+            agents={languageAgents}
+            value={homeAgent.slug}
+            onChange={setAgent}
+            mood={mood}
+            disabled={starting}
+          />
         </motion.div>
 
         {/* CTA */}
@@ -251,7 +269,6 @@ export default function HomePage() {
               </>
             )}
           </Button>
-          <LanguageSelect value={mood} languages={homeAgent.languages} onChange={handleLanguageChange} disabled={starting} />
           {/* Out of the flow, so an error never pushes the page into scrolling. */}
           <p role="alert" className="absolute inset-x-0 top-full mt-3 text-sm font-inter text-[#DC2626]">
             {error ?? text.error}

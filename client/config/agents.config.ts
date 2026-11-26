@@ -1,6 +1,6 @@
 import { personaConfig } from '@/config/persona.config';
 import { saltsAgents } from '@/config/salts.config';
-import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
+import { ALL_MOODS, AgentMoodEnum, AgentMoodI } from '@/types/agent';
 
 type ByMood<T> = Record<AgentMoodI, T>;
 
@@ -21,14 +21,12 @@ export interface HomeAgent {
   languages: AgentMoodI[];
 }
 
-const { english, spanish, turkish, ukrainian } = personaConfig.moods;
-
-// Solène and the text agent are offered in these two.
-const ENGLISH_AND_SPANISH = [AgentMoodEnum.ENGLISH, AgentMoodEnum.SPANISH];
+const { english, spanish, french, turkish, ukrainian } = personaConfig.moods;
 
 export const sameForAll = <T>(value: T): ByMood<T> => ({
   [AgentMoodEnum.ENGLISH]: value,
   [AgentMoodEnum.SPANISH]: value,
+  [AgentMoodEnum.FRENCH]: value,
   [AgentMoodEnum.TURKISH]: value,
   [AgentMoodEnum.UKRAINIAN]: value,
 });
@@ -36,6 +34,7 @@ export const sameForAll = <T>(value: T): ByMood<T> => ({
 const byMood = <T>(pick: (mood: (typeof personaConfig.moods)[AgentMoodI]) => T): ByMood<T> => ({
   [AgentMoodEnum.ENGLISH]: pick(english),
   [AgentMoodEnum.SPANISH]: pick(spanish),
+  [AgentMoodEnum.FRENCH]: pick(french),
   [AgentMoodEnum.TURKISH]: pick(turkish),
   [AgentMoodEnum.UKRAINIAN]: pick(ukrainian),
 });
@@ -47,11 +46,11 @@ const textAgent = (slug: string): HomeAgent => {
     slug,
     kind: 'text',
     name: agent.name,
-    // The Spanish version is the same agent for now.
     subtitle: sameForAll(agent.subtitle),
     startLabel: byMood(m => m.textStartLabel),
     avatar: agent.avatarImage ? sameForAll(agent.avatarImage) : undefined,
-    languages: ENGLISH_AND_SPANISH,
+    // Every language; those without a bonfire of their own use the English one.
+    languages: ALL_MOODS,
   };
 };
 
@@ -76,10 +75,9 @@ const instructor = (slug: string, name: string, avatar: string, languages: Agent
 // In carousel order; the page starts on the first voice agent (DEFAULT_AGENT).
 export const homeAgents: HomeAgent[] = [
   textAgent('general-assistant'),
-  // Voice instructors: one avatar for every language, each offered in one language (Solène in English and Spanish).
+  // Voice instructors: one avatar for every language, each offered in exactly one language.
   instructor('deepesh', 'Deepesh Singh', '/avatars/deepesh.gif', [AgentMoodEnum.ENGLISH]),
   instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
-  instructor('santiago', 'Santiago Villareal', '/avatars/santiago.gif', [AgentMoodEnum.SPANISH]),
   instructor('ege', 'Ege', '/avatars/ege.gif', [AgentMoodEnum.TURKISH]),
   instructor('fibo', 'Fibo', '/avatars/fibo.gif', [AgentMoodEnum.UKRAINIAN]),
   {
@@ -89,7 +87,7 @@ export const homeAgents: HomeAgent[] = [
     subtitle: byMood(m => m.heroSubtitle),
     startLabel: byMood(m => m.startChatButtonLabel),
     avatar: byMood(m => m.avatarImage),
-    languages: ENGLISH_AND_SPANISH,
+    languages: [AgentMoodEnum.FRENCH],
   },
 ];
 
@@ -98,8 +96,8 @@ export const DEFAULT_AGENT = homeAgents.find(agent => agent.kind === 'voice')?.s
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
 // persona (PERSONAS in agent/voice_agent/persona_config.py) and, per language,
-// the one MCP server it searches (the agent's MCP_<NAME>_URL secret). Turkish
-// and Ukrainian have no bonfire of their own: they search the English one and
+// the one MCP server it searches (the agent's MCP_<NAME>_URL secret). French,
+// Turkish and Ukrainian have no bonfire of their own: they search the English one and
 // the agent answers in the session's language.
 export interface VoiceSession {
   persona: string;
@@ -109,6 +107,7 @@ export interface VoiceSession {
 const BONFIRES_MCP: ByMood<string> = {
   [AgentMoodEnum.ENGLISH]: 'dev3pack',
   [AgentMoodEnum.SPANISH]: 'dev3pack_es',
+  [AgentMoodEnum.FRENCH]: 'dev3pack',
   [AgentMoodEnum.TURKISH]: 'dev3pack',
   [AgentMoodEnum.UKRAINIAN]: 'dev3pack',
 };
@@ -117,7 +116,6 @@ export const voiceSessions: Record<string, VoiceSession> = {
   [VOICE_AGENT]: { persona: 'solene', mcpServer: BONFIRES_MCP },
   fabian: { persona: 'fabian', mcpServer: BONFIRES_MCP },
   deepesh: { persona: 'deepesh', mcpServer: BONFIRES_MCP },
-  santiago: { persona: 'santiago', mcpServer: BONFIRES_MCP },
   ege: { persona: 'ege', mcpServer: BONFIRES_MCP },
   fibo: { persona: 'fibo', mcpServer: BONFIRES_MCP },
 };
@@ -129,3 +127,7 @@ export const shortStartLabel: Record<HomeAgent['kind'], ByMood<string>> = {
 };
 
 export const findHomeAgent = (slug: string) => homeAgents.find(agent => agent.slug === slug);
+
+// The home page picks a language first, then shows only the agents offered in it.
+export const agentsFor = <T extends HomeAgent>(agents: T[], mood: AgentMoodI) =>
+  agents.filter(agent => agent.languages.includes(mood));

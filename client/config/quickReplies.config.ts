@@ -17,9 +17,10 @@ export type QuickReplyNode = {
   disabled?: boolean;
 } & ({ reply: ByMood<string>; children: QuickReplyNode[] } | { ask: ByMood<string> });
 
-const all = (english: string, spanish: string, turkish: string, ukrainian: string): ByMood<string> => ({
+const all = (english: string, spanish: string, french: string, turkish: string, ukrainian: string): ByMood<string> => ({
   [AgentMoodEnum.ENGLISH]: english,
   [AgentMoodEnum.SPANISH]: spanish,
+  [AgentMoodEnum.FRENCH]: french,
   [AgentMoodEnum.TURKISH]: turkish,
   [AgentMoodEnum.UKRAINIAN]: ukrainian,
 });
@@ -27,75 +28,88 @@ const all = (english: string, spanish: string, turkish: string, ukrainian: strin
 export const quickReplyTree: QuickReplyNode[] = [
   {
     id: 'learn',
-    label: all('Learn', 'Aprender', 'Öğren', 'Навчатися'),
+    label: all('Learn', 'Aprender', 'Apprendre', 'Öğren', 'Навчатися'),
     reply: all(
       'What would you like to know?',
       '¿Qué te gustaría saber?',
+      "Qu'aimerais-tu savoir ?",
       'Ne öğrenmek istersin?',
       'Що ти хочеш дізнатися?'
     ),
     children: [
       {
         id: 'bootcamp-info',
-        label: all('Bootcamp info', 'Info del bootcamp', 'Bootcamp bilgisi', 'Про буткемп'),
+        label: all('Bootcamp info', 'Info del bootcamp', 'Infos bootcamp', 'Bootcamp bilgisi', 'Про буткемп'),
         ask: all(
           'Tell me more about the bootcamp',
           'Cuéntame más sobre el bootcamp',
+          'Parle-moi du bootcamp',
           'Bana bootcamp hakkında daha fazla bilgi ver',
           'Розкажи більше про буткемп'
         ),
       },
       {
         id: 'homework',
-        label: all('Homework', 'Tareas', 'Ödevler', 'Домашні завдання'),
+        label: all('Homework', 'Tareas', 'Devoirs', 'Ödevler', 'Домашні завдання'),
         ask: all(
           'Tell me about the homework',
           'Cuéntame sobre las tareas',
+          'Parle-moi des devoirs',
           'Bana ödevlerden bahset',
           'Розкажи про домашні завдання'
         ),
       },
       {
         id: 'environment',
-        label: all('Environment setup', 'Configurar entorno', 'Ortam kurulumu', 'Налаштування середовища'),
+        label: all(
+          'Environment setup',
+          'Configurar entorno',
+          "Configurer l'environnement",
+          'Ortam kurulumu',
+          'Налаштування середовища'
+        ),
         ask: all(
           'How do I set up my development environment?',
           '¿Cómo configuro mi entorno de desarrollo?',
+          'Comment configurer mon environnement de développement ?',
           'Geliştirme ortamımı nasıl kurarım?',
           'Як налаштувати середовище розробки?'
         ),
       },
       {
         id: 'sessions',
-        label: all('Sessions', 'Sesiones', 'Oturumlar', 'Заняття'),
-        reply: all('Which session?', '¿Qué sesión?', 'Hangi oturum?', 'Яке заняття?'),
+        label: all('Sessions', 'Sesiones', 'Sessions', 'Oturumlar', 'Заняття'),
+        reply: all('Which session?', '¿Qué sesión?', 'Quelle session ?', 'Hangi oturum?', 'Яке заняття?'),
         children: [
           {
             id: 'rust',
-            label: all('Rust', 'Rust', 'Rust', 'Rust'),
+            label: all('Rust', 'Rust', 'Rust', 'Rust', 'Rust'),
             ask: all(
               'What was covered in the Rust session?',
               '¿Qué se vio en la sesión de Rust?',
+              "Qu'a-t-on vu pendant la session Rust ?",
               'Rust oturumunda neler işlendi?',
               'Що розбирали на занятті з Rust?'
             ),
           },
           {
             id: 'solana',
-            label: all('Solana', 'Solana', 'Solana', 'Solana'),
+            label: all('Solana', 'Solana', 'Solana', 'Solana', 'Solana'),
             ask: all(
               'What was covered in the Solana session?',
               '¿Qué se vio en la sesión de Solana?',
+              "Qu'a-t-on vu pendant la session Solana ?",
               'Solana oturumunda neler işlendi?',
               'Що розбирали на занятті з Solana?'
             ),
           },
           {
             id: 'anchor',
-            label: all('Anchor', 'Anchor', 'Anchor', 'Anchor'),
+            label: all('Anchor', 'Anchor', 'Anchor', 'Anchor', 'Anchor'),
             ask: all(
               'What was covered in the Anchor session?',
               '¿Qué se vio en la sesión de Anchor?',
+              "Qu'a-t-on vu pendant la session Anchor ?",
               'Anchor oturumunda neler işlendi?',
               'Що розбирали на занятті з Anchor?'
             ),
@@ -106,10 +120,11 @@ export const quickReplyTree: QuickReplyNode[] = [
   },
   {
     id: 'build',
-    label: all('Build', 'Construir', 'Geliştir', 'Створювати'),
+    label: all('Build', 'Construir', 'Construire', 'Geliştir', 'Створювати'),
     ask: all(
       'Help me build my project',
       'Ayúdame a construir mi proyecto',
+      'Aide-moi à construire mon projet',
       'Projemi geliştirmeme yardım et',
       'Допоможи мені створити мій проєкт'
     ),
@@ -117,10 +132,11 @@ export const quickReplyTree: QuickReplyNode[] = [
   },
   {
     id: 'accelerate',
-    label: all('Accelerate', 'Acelerar', 'Hızlandır', 'Прискорити'),
+    label: all('Accelerate', 'Acelerar', 'Accélérer', 'Hızlandır', 'Прискорити'),
     ask: all(
       'How can I take my project further?',
       '¿Cómo puedo llevar mi proyecto más lejos?',
+      'Comment aller plus loin avec mon projet ?',
       'Projemi nasıl daha ileri taşıyabilirim?',
       'Як розвинути мій проєкт далі?'
     ),
@@ -128,12 +144,12 @@ export const quickReplyTree: QuickReplyNode[] = [
   },
 ];
 
-export const quickReplyBackLabel = all('Back', 'Atrás', 'Geri', 'Назад');
+export const quickReplyBackLabel = all('Back', 'Atrás', 'Retour', 'Geri', 'Назад');
 
 // The voice agent's idle check-in ("Hello?! Are you still there!?"). It is
 // written by the LLM, so it is matched loosely; one brings the options back.
 export const IDLE_PROMPT =
-  /still there|are you there|sigues ah[ií]|est[aá]s ah[ií]|orada m[ıi]s[ıi]n|hâlâ orada|hala orada|ти тут|ви тут|ще тут/i;
+  /still there|are you there|sigues ah[ií]|est[aá]s ah[ií]|toujours l[àa]|es-tu l[àa]|tu es l[àa]|orada m[ıi]s[ıi]n|hâlâ orada|hala orada|ти тут|ви тут|ще тут/i;
 
 // The root's first option: the newest session recording in the bonfire
 // (/api/latest-video), labelled with its title and asked about by name.
@@ -141,6 +157,7 @@ export const latestVideoAsk = (title: string) =>
   all(
     `I want to learn more about the "${title}" session recording`,
     `Quiero saber más sobre la grabación de la sesión "${title}"`,
+    `J'aimerais en savoir plus sur l'enregistrement de la session "${title}"`,
     `"${title}" oturum kaydı hakkında daha fazla bilgi almak istiyorum`,
     `Я хочу дізнатися більше про запис заняття "${title}"`
   );

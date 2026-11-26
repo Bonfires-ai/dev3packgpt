@@ -4,11 +4,13 @@ import { personaConfig } from '@/config/persona.config';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 
-const OPTIONS: { mood: AgentMoodI; flag: string }[] = [
-  { mood: AgentMoodEnum.ENGLISH, flag: '🇬🇧' },
-  { mood: AgentMoodEnum.SPANISH, flag: '🇪🇸' },
-  { mood: AgentMoodEnum.TURKISH, flag: '🇹🇷' },
-  { mood: AgentMoodEnum.UKRAINIAN, flag: '🇺🇦' },
+// Phones show the short code in place of the name, so all five fit one row.
+const OPTIONS: { mood: AgentMoodI; flag: string; code: string }[] = [
+  { mood: AgentMoodEnum.ENGLISH, flag: '🇬🇧', code: 'EN' },
+  { mood: AgentMoodEnum.SPANISH, flag: '🇪🇸', code: 'ES' },
+  { mood: AgentMoodEnum.FRENCH, flag: '🇫🇷', code: 'FR' },
+  { mood: AgentMoodEnum.TURKISH, flag: '🇹🇷', code: 'TR' },
+  { mood: AgentMoodEnum.UKRAINIAN, flag: '🇺🇦', code: 'UA' },
 ];
 
 // Square corners and tracked uppercase, like the CTA above it. The selected
@@ -29,7 +31,7 @@ export function LanguageSelect({
   const options = OPTIONS.filter(o => languages.includes(o.mood));
   return (
     <div role="radiogroup" aria-label="Language" className="inline-flex border border-[#E4EAEB] bg-white">
-      {options.map(({ mood, flag }, i) => {
+      {options.map(({ mood, flag, code }, i) => {
         const selected = mood === value;
         return (
           <button
@@ -40,7 +42,7 @@ export function LanguageSelect({
             disabled={disabled}
             onClick={() => onChange(mood)}
             className={clsx(
-              'flex h-10 items-center gap-2 px-4 font-inter text-xs font-semibold uppercase tracking-[0.15em] transition-colors',
+              'flex h-10 items-center gap-1.5 px-2.5 sm:gap-2 sm:px-4 font-inter text-xs font-semibold uppercase tracking-[0.15em] transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A15EED]',
               'disabled:cursor-not-allowed',
               i > 0 && 'border-l border-[#E4EAEB]',
@@ -52,7 +54,10 @@ export function LanguageSelect({
             <span aria-hidden="true" className="text-base leading-none">
               {flag}
             </span>
-            {personaConfig.moods[mood].label}
+            <span className="sm:hidden" aria-hidden="true">
+              {code}
+            </span>
+            <span className="sr-only sm:not-sr-only">{personaConfig.moods[mood].label}</span>
           </button>
         );
       })}

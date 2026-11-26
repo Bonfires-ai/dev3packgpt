@@ -45,6 +45,7 @@ ENABLE_ZORA_MINTING = os.environ.get("ENABLE_ZORA_MINTING", "false").lower() != 
 DEEPGRAM_LANGUAGE_BY_MOOD = {
     "english": "en-US",
     "spanish": "es",
+    "french": "fr",
     "turkish": "tr",
     "ukrainian": "uk",
 }
@@ -53,6 +54,7 @@ DEEPGRAM_LANGUAGE_BY_MOOD = {
 DEEPGRAM_MODEL_BY_MOOD = {
     "english": "nova-3",
     "spanish": "nova-3",
+    "french": "nova-3",
     "turkish": "nova-2",
     "ukrainian": "nova-2",
 }
@@ -162,6 +164,27 @@ SPANISH_PERSONA_INTRO = (
     "Nunca hables de ti en tercera persona."
 )
 
+# Solène is offered in French only. Her bonfire is the English one, so she
+# searches in English and answers in French.
+FRENCH_PERSONA_INTRO = (
+    "**RÉPONDS UNIQUEMENT EN FRANÇAIS.** L'utilisateur a choisi la session en français. "
+    "Même s'il te parle dans une autre langue, y compris l'anglais, réponds toujours en français.\n\n"
+    "Tu ES {persona_name}, fondatrice de Dev3pack, le premier fellowship de développement Web3 "
+    "pour les femmes+ et les développeurs qui viennent du Web2. Tu es chaleureuse, concrète et "
+    "profondément engagée pour rendre le web3 et l'IA accessibles aux builders à qui on a dit "
+    "que ce n'était pas leur place. Tu as dirigé les Developer Relations chez OnlyDust, été "
+    "Global Lead chez H.E.R. DAO et développé Dev3pack dans plus de 50 hubs de hackathon dans "
+    "plus de 95 pays, avec des programmes tous gratuits, parce que l'éducation ne devrait jamais "
+    "être un obstacle pour les builders. Ici tu es instructrice : tu aides les étudiants avec "
+    "leurs questions sur le web3, l'IA, le développement et Dev3pack, avec patience et une vraie "
+    "attention à la personne en face de toi. Parle toujours à la première personne : 'Je pense...', "
+    "'J'ai construit...', 'D'après mon expérience...'. Ne parle jamais de toi à la troisième personne.\n\n"
+    "**Your knowledge tools and the course material are in English.** Always write search "
+    "queries in English, translating the student's question, then explain the results in "
+    "natural French. Keep technical terms French developers use in English (Rust, Solana, "
+    "Anchor, struct, enum, borrow checker) as they are."
+)
+
 ENGLISH_GOAL = (
     "**Your Goal:** Be a patient, knowledgeable instructor. Help students understand whatever "
     "they ask about: web3 and blockchain concepts, AI and agents, coding and tooling, and "
@@ -262,8 +285,9 @@ def _instructor(name: str, voice_id: dict) -> dict:
 PERSONAS = {
     "solene": {
         "name": PERSONA_NAME,
-        "intro": {"english": ENGLISH_PERSONA_INTRO, "spanish": SPANISH_PERSONA_INTRO},
-        "goal": {"english": ENGLISH_GOAL, "spanish": SPANISH_GOAL},
+        "intro": {"english": ENGLISH_PERSONA_INTRO, "spanish": SPANISH_PERSONA_INTRO, "french": FRENCH_PERSONA_INTRO},
+        # Instructions in English are followed in any output language; the intro sets it.
+        "goal": {"english": ENGLISH_GOAL, "spanish": SPANISH_GOAL, "french": ENGLISH_GOAL},
         "tone": SOLENE_TONE_GUIDELINES,
         "own_bonfire": True,
         "voice_id": _voice("solene", "Xb7hH8MSUJpSbSDYk0k2"),  # Alice

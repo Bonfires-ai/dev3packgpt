@@ -1,4 +1,4 @@
-import { VOICE_AGENT, voiceSessions } from '@/config/agents.config';
+import { VOICE_AGENT, findHomeAgent, voiceSessions } from '@/config/agents.config';
 import { requireMember } from '@/lib/auth';
 import { ensureWalletKey } from '@/lib/wallet';
 import { isMood } from '@/types/agent';
@@ -99,6 +99,10 @@ export async function GET(request: Request) {
     const voiceSession = voiceSessions[searchParams.get('agent') ?? VOICE_AGENT];
     if (!voiceSession) {
       return NextResponse.json({ error: 'Unknown agent' }, { status: 400 });
+    }
+    // Each agent speaks only its own languages (old links may name another).
+    if (!findHomeAgent(searchParams.get('agent') ?? VOICE_AGENT)?.languages.includes(mood)) {
+      return NextResponse.json({ error: 'This agent does not speak that language' }, { status: 400 });
     }
 
     if (LIVEKIT_URL === undefined) {

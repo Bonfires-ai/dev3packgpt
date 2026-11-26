@@ -79,7 +79,13 @@ export function useTextSession() {
       if (!res.ok || !body.sessionId) throw new Error(body.error ?? `Could not start a session (${res.status})`);
       sessionRef.current = { agent: agent.slug, sessionId: body.sessionId, mood };
       setMessages([
-        { id: 'local-greeting', text: agent.greeting, role: 'assistant', firstReceivedTime: Date.now(), local: true },
+        {
+          id: 'local-greeting',
+          text: agent.greeting[mood],
+          role: 'assistant',
+          firstReceivedTime: Date.now(),
+          local: true,
+        },
       ]);
       setStatus('connected');
     } catch (err) {

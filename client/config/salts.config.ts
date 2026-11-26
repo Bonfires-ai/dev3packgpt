@@ -10,8 +10,8 @@ export interface SaltsAgent {
   subtitle: string;
   // Home page avatar; without one the carousel shows a placeholder with the initials.
   avatarImage?: string;
-  // Shown the moment the session starts; Salts agents do not greet on their own.
-  greeting: string;
+  // Shown the moment the session starts, in the selected language; Salts agents do not greet on their own.
+  greeting: Record<AgentMoodI, string>;
   // The one MCP server (by its name on the Salts agent) each language may use; the
   // other is never offered, the same split the voice agent's MCP has.
   mcpServer: Record<AgentMoodI, string>;
@@ -24,9 +24,21 @@ export const saltsAgents: SaltsAgent[] = [
     subtitle: 'Personal teaching assistant',
     // Signed out only: signed in, the slide shows the member's own photo or initials.
     avatarImage: '/avatars/bonfires.svg',
-    greeting: "Hi! I'm the Bonfires Agent. What can I help you with?",
-    // Offered in English and Spanish only; the other languages would use the English server.
-    mcpServer: { english: 'Dev3Pack', spanish: 'Dev3Pack Spanish', turkish: 'Dev3Pack', ukrainian: 'Dev3Pack' },
+    greeting: {
+      english: "Hi! I'm the Bonfires Agent. What can I help you with?",
+      spanish: '¡Hola! Soy el Bonfires Agent. ¿En qué puedo ayudarte?',
+      french: "Salut ! Je suis le Bonfires Agent. Comment puis-je t'aider ?",
+      turkish: 'Merhaba! Ben Bonfires Agent. Sana nasıl yardımcı olabilirim?',
+      ukrainian: 'Привіт! Я Bonfires Agent. Чим можу допомогти?',
+    },
+    // French, Turkish and Ukrainian have no bonfire of their own and use the English server.
+    mcpServer: {
+      english: 'Dev3Pack',
+      spanish: 'Dev3Pack Spanish',
+      french: 'Dev3Pack',
+      turkish: 'Dev3Pack',
+      ukrainian: 'Dev3Pack',
+    },
   },
 ];
 
