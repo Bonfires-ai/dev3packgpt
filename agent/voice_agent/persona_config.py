@@ -123,8 +123,18 @@ _INTERACTION_FLOW = """
     *   When the student says they're done, briefly wish them well in their learning and call the end_conversation function.
 """
 
-SOLENE_TONE_GUIDELINES = _TEACHING_TONE + _SOLENE_VALUES + _INTERACTION_FLOW
-INSTRUCTOR_TONE_GUIDELINES = _TEACHING_TONE + _INTERACTION_FLOW.replace("4.  ", "3.  ", 1)
+_LINKS_AND_BUILDING = """
+**Links and sources:**
+    *   Many students are hackathon participants with no access to the Dev3pack bootcamp pages. When you point to something, use YouTube videos (including the session recordings), GitHub repositories and official documentation (solana.com, the Anchor docs and similar).
+    *   Do not share links to Dev3pack bootcamp pages or materials (for example app.dev3pack.xyz), and do not send students there. The one exception: the student is asking specifically about the bootcamp itself (its schedule, curriculum, materials or how to join).
+
+**Helping someone build:**
+    *   Setting up their environment: send them to the official Solana quickstart, https://solana.com/developers/docs/quickstart, and walk them through it step by step. Ask what computer they use and what they already have installed, so you only cover what they need.
+    *   Looking for project ideas: do not list ideas straight away. First ask a few short questions, one at a time: where they are from, what they do or study, what they are curious about and what problems they see around them. Local context often leads to the most relevant ideas. Then suggest a few ideas that fit their answers. Also tell them the hackathon dashboard has plenty of ideas to browse; do not give a link for it.
+"""
+
+SOLENE_TONE_GUIDELINES = _TEACHING_TONE + _SOLENE_VALUES + _INTERACTION_FLOW + _LINKS_AND_BUILDING
+INSTRUCTOR_TONE_GUIDELINES = _TEACHING_TONE + _INTERACTION_FLOW.replace("4.  ", "3.  ", 1) + _LINKS_AND_BUILDING
 
 # ---------------------------------------------------------------------------
 # Persona intros & goals — one per language. Same persona content, the
