@@ -1,4 +1,4 @@
-// Languages a session can be held in. French, Turkish and Ukrainian speak their own
+// Languages a session can be held in. Spanish, French, Turkish and Ukrainian speak their own
 // language but search the English bonfire (see BONFIRES_MCP in agents.config.ts).
 export enum AgentMoodEnum {
   ENGLISH = 'english',

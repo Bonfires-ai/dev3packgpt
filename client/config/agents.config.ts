@@ -96,9 +96,8 @@ export const DEFAULT_AGENT = homeAgents.find(agent => agent.kind === 'voice')?.s
 
 // What the dev3pack_instructor voice agent becomes for each voice slide: its
 // persona (PERSONAS in agent/voice_agent/persona_config.py) and, per language,
-// the one MCP server it searches (the agent's MCP_<NAME>_URL secret). French,
-// Turkish and Ukrainian have no bonfire of their own: they search the English one and
-// the agent answers in the session's language.
+// the one MCP server it searches (the agent's MCP_<NAME>_URL secret). Every language
+// searches the English bonfire and the agent answers in the session's language.
 export interface VoiceSession {
   persona: string;
   mcpServer: ByMood<string>;
@@ -106,7 +105,7 @@ export interface VoiceSession {
 
 const BONFIRES_MCP: ByMood<string> = {
   [AgentMoodEnum.ENGLISH]: 'dev3pack',
-  [AgentMoodEnum.SPANISH]: 'dev3pack_es',
+  [AgentMoodEnum.SPANISH]: 'dev3pack',
   [AgentMoodEnum.FRENCH]: 'dev3pack',
   [AgentMoodEnum.TURKISH]: 'dev3pack',
   [AgentMoodEnum.UKRAINIAN]: 'dev3pack',

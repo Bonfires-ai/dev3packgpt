@@ -2,13 +2,13 @@ import { AgentMoodEnum, type AgentMoodI } from '@/types/agent';
 import { NextResponse } from 'next/server';
 
 // The most recently ingested YouTube video in a language's bonfire, for the
-// quick-option chip that asks the agent about it. Each language has its own
-// bonfire (dev3pack / dev3pack_es); French, Turkish and Ukrainian use the English one.
+// quick-option chip that asks the agent about it. Every language uses the
+// English bonfire (dev3pack).
 // The read keys stay on the server.
 const API_URL = process.env.BONFIRES_API_URL ?? 'https://api.bonfires.ai';
 const KEYS: Record<AgentMoodI, string | undefined> = {
   [AgentMoodEnum.ENGLISH]: process.env.BONFIRES_KEY_EN,
-  [AgentMoodEnum.SPANISH]: process.env.BONFIRES_KEY_ES,
+  [AgentMoodEnum.SPANISH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.FRENCH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.TURKISH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.UKRAINIAN]: process.env.BONFIRES_KEY_EN,

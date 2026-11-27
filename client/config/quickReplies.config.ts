@@ -121,14 +121,37 @@ export const quickReplyTree: QuickReplyNode[] = [
   {
     id: 'build',
     label: all('Build', 'Construir', 'Construire', 'Geliştir', 'Створювати'),
-    ask: all(
-      'Help me build my project',
-      'Ayúdame a construir mi proyecto',
-      'Aide-moi à construire mon projet',
-      'Projemi geliştirmeme yardım et',
-      'Допоможи мені створити мій проєкт'
+    reply: all(
+      'What do you need help with?',
+      '¿Con qué necesitas ayuda?',
+      "De quoi as-tu besoin ?",
+      'Neye yardım istersin?',
+      'З чим тобі потрібна допомога?'
     ),
-    disabled: true,
+    children: [
+      {
+        id: 'build-environment',
+        label: all(
+          'Set up your environment',
+          'Configura tu entorno',
+          'Configure ton environnement',
+          'Ortamını kur',
+          'Налаштуй своє середовище'
+        ),
+        ask: all(
+          'Set up your environment',
+          'Configura tu entorno',
+          'Configure ton environnement',
+          'Ortamını kur',
+          'Налаштуй своє середовище'
+        ),
+      },
+      {
+        id: 'build-ideas',
+        label: all('I need ideas', 'Necesito ideas', "J'ai besoin d'idées", 'Fikirlere ihtiyacım var', 'Мені потрібні ідеї'),
+        ask: all('I need ideas', 'Necesito ideas', "J'ai besoin d'idées", 'Fikirlere ihtiyacım var', 'Мені потрібні ідеї'),
+      },
+    ],
   },
   {
     id: 'accelerate',

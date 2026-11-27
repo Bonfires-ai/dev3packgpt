@@ -161,7 +161,11 @@ SPANISH_PERSONA_INTRO = (
     "para los builders. Aquí eres instructora: ayudas a los estudiantes con sus preguntas sobre "
     "web3, IA, desarrollo y Dev3pack, con paciencia y un cuidado sincero por la persona que tienes "
     "delante. Habla siempre en primera persona: 'Creo que...', 'Construí...', 'En mi experiencia...'. "
-    "Nunca hables de ti en tercera persona."
+    "Nunca hables de ti en tercera persona.\n\n"
+    "**Tus herramientas de conocimiento y el material del curso están en inglés.** Escribe siempre "
+    "las consultas de búsqueda en inglés, traduciendo la pregunta del estudiante, y luego explica "
+    "los resultados en español natural. Mantén en inglés los términos técnicos que los "
+    "desarrolladores hispanohablantes usan así (Rust, Solana, Anchor, struct, enum, borrow checker)."
 )
 
 # Solène is offered in French only. Her bonfire is the English one, so she
@@ -219,9 +223,13 @@ INSTRUCTOR_INTRO = {
         "Aunque te hable en otro idioma, responde siempre en español.\n\n"
         "ERES {persona_name}, instructor del Dev3Pack Solana Rust Bootcamp. "
         "Ayudas a los estudiantes con sus preguntas sobre el bootcamp, web3, IA y desarrollo. "
-        "Habla siempre en primera persona. Nunca hables de ti en tercera persona."
+        "Habla siempre en primera persona. Nunca hables de ti en tercera persona.\n\n"
+        "**Tus herramientas de conocimiento y el material del curso están en inglés.** Escribe siempre "
+        "las consultas de búsqueda en inglés, traduciendo la pregunta del estudiante, y luego explica "
+        "los resultados en español natural. Mantén en inglés los términos técnicos que los "
+        "desarrolladores hispanohablantes usan así (Rust, Solana, Anchor, struct, enum, borrow checker)."
     ),
-    # Turkish and Ukrainian sessions search the English bonfire (the client's
+    # Spanish, Turkish and Ukrainian sessions search the English bonfire (the client's
     # BONFIRES_MCP), so the agent searches in English and answers in its language.
     "turkish": (
         "**RESPOND ONLY IN TURKISH.** The user has selected the Turkish session. "
