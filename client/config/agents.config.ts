@@ -21,7 +21,7 @@ export interface HomeAgent {
   languages: AgentMoodI[];
 }
 
-const { english, spanish, french, turkish, ukrainian } = personaConfig.moods;
+const { english, spanish, french, turkish, ukrainian, vietnamese } = personaConfig.moods;
 
 export const sameForAll = <T>(value: T): ByMood<T> => ({
   [AgentMoodEnum.ENGLISH]: value,
@@ -29,6 +29,7 @@ export const sameForAll = <T>(value: T): ByMood<T> => ({
   [AgentMoodEnum.FRENCH]: value,
   [AgentMoodEnum.TURKISH]: value,
   [AgentMoodEnum.UKRAINIAN]: value,
+  [AgentMoodEnum.VIETNAMESE]: value,
 });
 
 const byMood = <T>(pick: (mood: (typeof personaConfig.moods)[AgentMoodI]) => T): ByMood<T> => ({
@@ -37,6 +38,7 @@ const byMood = <T>(pick: (mood: (typeof personaConfig.moods)[AgentMoodI]) => T):
   [AgentMoodEnum.FRENCH]: pick(french),
   [AgentMoodEnum.TURKISH]: pick(turkish),
   [AgentMoodEnum.UKRAINIAN]: pick(ukrainian),
+  [AgentMoodEnum.VIETNAMESE]: pick(vietnamese),
 });
 
 const textAgent = (slug: string): HomeAgent => {
@@ -80,6 +82,7 @@ export const homeAgents: HomeAgent[] = [
   instructor('fabian', 'Fabian Sanchez', '/avatars/fabian.gif', [AgentMoodEnum.SPANISH]),
   instructor('ege', 'Ege', '/avatars/ege.gif', [AgentMoodEnum.TURKISH]),
   instructor('fibo', 'Fibo', '/avatars/fibo.gif', [AgentMoodEnum.UKRAINIAN]),
+  instructor('kay', 'Kay', '/avatars/kay.gif', [AgentMoodEnum.VIETNAMESE]),
   {
     slug: VOICE_AGENT,
     kind: 'voice',
@@ -109,6 +112,7 @@ const BONFIRES_MCP: ByMood<string> = {
   [AgentMoodEnum.FRENCH]: 'dev3pack',
   [AgentMoodEnum.TURKISH]: 'dev3pack',
   [AgentMoodEnum.UKRAINIAN]: 'dev3pack',
+  [AgentMoodEnum.VIETNAMESE]: 'dev3pack',
 };
 
 export const voiceSessions: Record<string, VoiceSession> = {
@@ -117,6 +121,7 @@ export const voiceSessions: Record<string, VoiceSession> = {
   deepesh: { persona: 'deepesh', mcpServer: BONFIRES_MCP },
   ege: { persona: 'ege', mcpServer: BONFIRES_MCP },
   fibo: { persona: 'fibo', mcpServer: BONFIRES_MCP },
+  kay: { persona: 'kay', mcpServer: BONFIRES_MCP },
 };
 
 // The start button on phones: one word by kind, in place of startLabel.

@@ -30,14 +30,16 @@ export const saltsAgents: SaltsAgent[] = [
       french: "Salut ! Je suis le Bonfires Agent. Comment puis-je t'aider ?",
       turkish: 'Merhaba! Ben Bonfires Agent. Sana nasıl yardımcı olabilirim?',
       ukrainian: 'Привіт! Я Bonfires Agent. Чим можу допомогти?',
+      vietnamese: 'Xin chào! Mình là Bonfires Agent. Mình có thể giúp gì cho bạn?',
     },
-    // French, Turkish and Ukrainian have no bonfire of their own and use the English server.
+    // French, Turkish, Ukrainian and Vietnamese have no bonfire of their own and use the English server.
     mcpServer: {
       english: 'Dev3Pack',
       spanish: 'Dev3Pack Spanish',
       french: 'Dev3Pack',
       turkish: 'Dev3Pack',
       ukrainian: 'Dev3Pack',
+      vietnamese: 'Dev3Pack',
     },
   },
 ];

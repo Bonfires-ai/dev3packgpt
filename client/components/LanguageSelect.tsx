@@ -4,13 +4,14 @@ import { personaConfig } from '@/config/persona.config';
 import { AgentMoodEnum, AgentMoodI } from '@/types/agent';
 import clsx from 'clsx';
 
-// Phones show the short code in place of the name, so all five fit one row.
+// Phones show the short code in place of the name, so all six fit one row.
 const OPTIONS: { mood: AgentMoodI; flag: string; code: string }[] = [
   { mood: AgentMoodEnum.ENGLISH, flag: '🇬🇧', code: 'EN' },
   { mood: AgentMoodEnum.SPANISH, flag: '🇪🇸', code: 'ES' },
   { mood: AgentMoodEnum.FRENCH, flag: '🇫🇷', code: 'FR' },
   { mood: AgentMoodEnum.TURKISH, flag: '🇹🇷', code: 'TR' },
   { mood: AgentMoodEnum.UKRAINIAN, flag: '🇺🇦', code: 'UA' },
+  { mood: AgentMoodEnum.VIETNAMESE, flag: '🇻🇳', code: 'VI' },
 ];
 
 // Square corners and tracked uppercase, like the CTA above it. The selected

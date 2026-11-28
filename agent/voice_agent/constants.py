@@ -27,6 +27,7 @@ mood_greeting = {
     "french": "Bienvenue ! Je suis là pour répondre à tes questions. Qu'aimerais-tu mieux comprendre ?",
     "turkish": "Hoş geldin! Sorularına yardım etmek için buradayım. Neyi daha iyi anlamak istersin?",
     "ukrainian": "Вітаю! Я тут, щоб допомогти з твоїми запитаннями. Що б ти хотів краще зрозуміти?",
+    "vietnamese": "Chào mừng bạn! Mình ở đây để giúp bạn giải đáp thắc mắc. Bạn muốn hiểu rõ hơn về điều gì?",
 }
 
 mood_goodbye = {
@@ -35,4 +36,5 @@ mood_goodbye = {
     "french": "À bientôt, et prends soin de toi. Je serai là quand tu voudras continuer à apprendre.",
     "turkish": "Şimdilik hoşça kal, kendine iyi bak. Öğrenmeye devam etmek istediğinde buradayım.",
     "ukrainian": "Бувай, і бережи себе. Я буду тут, коли захочеш навчатися далі.",
+    "vietnamese": "Tạm biệt nhé, giữ gìn sức khỏe. Mình sẽ ở đây khi bạn muốn học tiếp.",
 }

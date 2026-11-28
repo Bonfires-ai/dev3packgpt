@@ -12,6 +12,7 @@ const KEYS: Record<AgentMoodI, string | undefined> = {
   [AgentMoodEnum.FRENCH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.TURKISH]: process.env.BONFIRES_KEY_EN,
   [AgentMoodEnum.UKRAINIAN]: process.env.BONFIRES_KEY_EN,
+  [AgentMoodEnum.VIETNAMESE]: process.env.BONFIRES_KEY_EN,
 };
 
 // New videos are rare; one lookup per language every few minutes is plenty.
@@ -28,11 +29,7 @@ interface BonfireDocument {
 // question use the plain title.
 // Built from a string: the tsconfig target (es5) rejects the `u` flag in a literal.
 const EMOJI = new RegExp('[\\u{1F1E6}-\\u{1F1FF}\\p{Extended_Pictographic}\\uFE0F\\u200D]', 'gu');
-const plainTitle = (title: string) =>
-  title
-    .replace(EMOJI, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+const plainTitle = (title: string) => title.replace(EMOJI, '').replace(/\s+/g, ' ').trim();
 
 const isYouTube = (uri: string) => /^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(uri);
 

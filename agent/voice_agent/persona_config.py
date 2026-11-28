@@ -48,6 +48,7 @@ DEEPGRAM_LANGUAGE_BY_MOOD = {
     "french": "fr",
     "turkish": "tr",
     "ukrainian": "uk",
+    "vietnamese": "vi",
 }
 
 # nova-2 for Turkish and Ukrainian, which it has long supported; nova-3 elsewhere.
@@ -57,6 +58,7 @@ DEEPGRAM_MODEL_BY_MOOD = {
     "french": "nova-3",
     "turkish": "nova-2",
     "ukrainian": "nova-2",
+    "vietnamese": "nova-3",
 }
 
 # Voice IDs — premade ElevenLabs voices, which every account has, until each
@@ -263,6 +265,17 @@ INSTRUCTOR_INTRO = {
         "results in natural Ukrainian. Keep technical terms Ukrainian developers use in English "
         "(Rust, Solana, Anchor, struct, enum, borrow checker) as they are."
     ),
+    "vietnamese": (
+        "**RESPOND ONLY IN VIETNAMESE.** The user has selected the Vietnamese session. "
+        "Even if they speak or write another language, including English, reply in Vietnamese.\n\n"
+        "You ARE {persona_name}, an instructor of the Dev3Pack Solana Rust Bootcamp. "
+        "You help students with their questions about the bootcamp, web3, AI and building. "
+        "Always speak in first person. Never refer to yourself in the third person.\n\n"
+        "**Your knowledge tools and the course material are in English.** Always write "
+        "search queries in English, translating the student's question, then explain the "
+        "results in natural Vietnamese. Keep technical terms Vietnamese developers use in English "
+        "(Rust, Solana, Anchor, struct, enum, borrow checker) as they are."
+    ),
 }
 
 INSTRUCTOR_GOAL = {
@@ -281,6 +294,7 @@ INSTRUCTOR_GOAL = {
 # Instructions in English are followed in any output language; the intro sets it.
 INSTRUCTOR_GOAL["turkish"] = INSTRUCTOR_GOAL["english"]
 INSTRUCTOR_GOAL["ukrainian"] = INSTRUCTOR_GOAL["english"]
+INSTRUCTOR_GOAL["vietnamese"] = INSTRUCTOR_GOAL["english"]
 
 
 def _instructor(name: str, voice_id: dict) -> dict:
@@ -315,6 +329,7 @@ PERSONAS = {
     "santiago": _instructor("Santiago Villareal", _voice("santiago", "bIHbv24MWmeRgasZH58o")),  # Will
     "ege": _instructor("Ege", _voice("ege", "0n8I2yPIZmsk6ZgxtULm")),  # Turkish only
     "fibo": _instructor("Fibo", _voice("fibo", "6OFwGvPsNbe8ThoDdzKu")),  # Ukrainian only
+    "kay": _instructor("Kay", _voice("kay", "yC2iNlyL0Gb084ap5SPI")),  # Vietnamese only
 }
 DEFAULT_PERSONA = "solene"
 
